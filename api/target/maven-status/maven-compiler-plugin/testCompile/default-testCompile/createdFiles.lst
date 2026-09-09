@@ -1,0 +1,2 @@
+org\openmrs\module\epidemiologysurveillance\api\EpidemiologysurveillanceServiceTest.class
+org\openmrs\module\epidemiologysurveillance\api\dao\EpidemiologysurveillanceDaoTest.class

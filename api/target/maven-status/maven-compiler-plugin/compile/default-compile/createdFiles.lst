@@ -1,0 +1,6 @@
+org\openmrs\module\epidemiologysurveillance\api\dao\EpidemiologysurveillanceDao.class
+org\openmrs\module\epidemiologysurveillance\api\impl\EpidemiologysurveillanceServiceImpl.class
+org\openmrs\module\epidemiologysurveillance\api\EpidemiologysurveillanceService.class
+org\openmrs\module\epidemiologysurveillance\Epidemiologysurveillance.class
+org\openmrs\module\epidemiologysurveillance\EpidemiologysurveillanceActivator.class
+org\openmrs\module\epidemiologysurveillance\EpidemiologysurveillanceConfig.class

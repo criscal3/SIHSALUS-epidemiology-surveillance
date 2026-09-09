@@ -1,0 +1,2 @@
+org\openmrs\module\epidemiologysurveillance\web\controller\EpidemiologysurveillanceController.class
+org\openmrs\module\epidemiologysurveillance\extension\html\AdminList.class
