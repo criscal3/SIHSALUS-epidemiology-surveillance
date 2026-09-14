@@ -3,7 +3,7 @@
   "surveillanceStartDate": "<YYYY-MM-DD de cobertura verificada>",
   "encounterTypeUuid": "<UUID tipo de atencion de vigilancia>",
   "encounterRoleUuid": "<UUID rol del proveedor>",
-  "ethnicityAttributeTypeUuid": "<UUID atributo de etnia verificado>",
+  "ethnicityAttributeTypeUuid": "8d871386-c2cc-11de-8d13-0010c6dffd0f",
   "pregnancyAttributeTypeUuid": null,
   "icd10SourceUuid": "<UUID fuente CIE-10 existente>",
   "duplicateWindowDays": 30,
