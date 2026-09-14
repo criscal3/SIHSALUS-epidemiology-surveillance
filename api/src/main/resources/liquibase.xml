@@ -25,6 +25,8 @@
 		</createTable>
         <addForeignKeyConstraint constraintName="epidemiologysurveillance_item_owner_fk" baseTableName="epidemiologysurveillance_item" baseColumnNames="owner"  referencedTableName="users"
                                  referencedColumnNames="user_id" />
-    </changeSet> -->
+    </changeSet>
+    <include file="liquibase-surveillance.xml"/>
+    <include file="liquibase-scheduler.xml"/>
  
 </databaseChangeLog>

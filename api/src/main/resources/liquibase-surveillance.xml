@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+  <changeSet id="1" author="sihsalus">
+    <createTable tableName="evento_notificable">
+      <column name="evento_notificable_id" type="int" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="uuid" type="varchar(38)"><constraints nullable="false" unique="true"/></column>
+      <column name="concept_id" type="int"><constraints nullable="false"/></column>
+      <column name="nombre" type="varchar(255)"><constraints nullable="false"/></column>
+      <column name="periodicidad" type="varchar(255)"><constraints nullable="false"/></column>
+      <column name="plazo_dias" type="int"><constraints nullable="false"/></column>
+    </createTable>
+    <addForeignKeyConstraint constraintName="es_1_concept_id_fk" baseTableName="evento_notificable" baseColumnNames="concept_id" referencedTableName="concept" referencedColumnNames="concept_id"/>
+    <addUniqueConstraint tableName="evento_notificable" columnNames="concept_id" constraintName="es_evento_concept_uq"/>
+  </changeSet>
+  <changeSet id="2" author="sihsalus">
+    <createTable tableName="regla_alerta_brote">
+      <column name="regla_id" type="int" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="uuid" type="varchar(38)"><constraints nullable="false" unique="true"/></column>
+      <column name="evento_notificable_id" type="int"><constraints nullable="false"/></column>
+      <column name="tipo_condicion" type="varchar(255)"><constraints nullable="false"/></column>
+      <column name="ventana_semanas" type="int"></column>
+      <column name="valor_umbral" type="double"></column>
+      <column name="activa" type="boolean"><constraints nullable="false"/></column>
+    </createTable>
+    <addForeignKeyConstraint constraintName="es_2_evento_notificable_id_fk" baseTableName="regla_alerta_brote" baseColumnNames="evento_notificable_id" referencedTableName="evento_notificable" referencedColumnNames="evento_notificable_id"/>
+  </changeSet>
+  <changeSet id="3" author="sihsalus">
+    <createTable tableName="conteo_casos_periodo">
+      <column name="conteo_id" type="int" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="uuid" type="varchar(38)"><constraints nullable="false" unique="true"/></column>
+      <column name="evento_notificable_id" type="int"><constraints nullable="false"/></column>
+      <column name="tipo_periodo" type="varchar(255)"><constraints nullable="false"/></column>
+      <column name="anio" type="int"><constraints nullable="false"/></column>
+      <column name="numero_periodo" type="int"><constraints nullable="false"/></column>
+      <column name="fecha" type="datetime"></column>
+      <column name="numero_casos" type="int"><constraints nullable="false"/></column>
+    </createTable>
+    <addForeignKeyConstraint constraintName="es_3_evento_notificable_id_fk" baseTableName="conteo_casos_periodo" baseColumnNames="evento_notificable_id" referencedTableName="evento_notificable" referencedColumnNames="evento_notificable_id"/>
+    <addUniqueConstraint tableName="conteo_casos_periodo" columnNames="evento_notificable_id,tipo_periodo,anio,numero_periodo" constraintName="es_conteo_periodo_uq"/>
+  </changeSet>
+  <changeSet id="4" author="sihsalus">
+    <createTable tableName="foco_epidemiologico">
+      <column name="foco_id" type="int" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="uuid" type="varchar(38)"><constraints nullable="false" unique="true"/></column>
+      <column name="evento_notificable_id" type="int"><constraints nullable="false"/></column>
+      <column name="location_id" type="int"><constraints nullable="false"/></column>
+      <column name="clasificacion" type="varchar(255)"><constraints nullable="false"/></column>
+      <column name="receptivo" type="boolean"><constraints nullable="false"/></column>
+      <column name="fecha_ultimo_caso" type="datetime"></column>
+    </createTable>
+    <addForeignKeyConstraint constraintName="es_4_evento_notificable_id_fk" baseTableName="foco_epidemiologico" baseColumnNames="evento_notificable_id" referencedTableName="evento_notificable" referencedColumnNames="evento_notificable_id"/>
+    <addForeignKeyConstraint constraintName="es_4_location_id_fk" baseTableName="foco_epidemiologico" baseColumnNames="location_id" referencedTableName="location" referencedColumnNames="location_id"/>
+    <addUniqueConstraint tableName="foco_epidemiologico" columnNames="evento_notificable_id,location_id" constraintName="es_foco_location_uq"/>
+  </changeSet>
+  <changeSet id="5" author="sihsalus">
+    <createTable tableName="auditoria_vigilancia">
+      <column name="auditoria_id" type="int" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="uuid" type="varchar(38)"><constraints nullable="false" unique="true"/></column>
+      <column name="usuario_id" type="int"><constraints nullable="false"/></column>
+      <column name="fecha_hora" type="datetime"><constraints nullable="false"/></column>
+      <column name="tipo_accion" type="varchar(255)"><constraints nullable="false"/></column>
+      <column name="entidad_afectada" type="varchar(255)"><constraints nullable="false"/></column>
+      <column name="registro_afectado_id" type="int"></column>
+      <column name="campo_modificado" type="varchar(255)"></column>
+      <column name="valor_anterior" type="clob"></column>
+      <column name="valor_nuevo" type="clob"></column>
+      <column name="resultado_accion" type="varchar(255)"><constraints nullable="false"/></column>
+    </createTable>
+    <addForeignKeyConstraint constraintName="es_5_usuario_id_fk" baseTableName="auditoria_vigilancia" baseColumnNames="usuario_id" referencedTableName="users" referencedColumnNames="user_id"/>
+    <createIndex tableName="auditoria_vigilancia" indexName="es_auditoria_fecha_idx"><column name="fecha_hora"/></createIndex>
+  </changeSet>
+  <changeSet id="6" author="sihsalus">
+    <createTable tableName="notificacion_noti">
+      <column name="notificacion_id" type="int" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="uuid" type="varchar(38)"><constraints nullable="false" unique="true"/></column>
+      <column name="encounter_id" type="int"><constraints nullable="false"/></column>
+      <column name="evento_notificable_id" type="int"><constraints nullable="false"/></column>
+      <column name="version_formato" type="varchar(255)"><constraints nullable="false"/></column>
+      <column name="contenido_exportable" type="clob"><constraints nullable="false"/></column>
+      <column name="estado_envio" type="varchar(255)"><constraints nullable="false"/></column>
+      <column name="fecha_generacion" type="datetime"><constraints nullable="false"/></column>
+    </createTable>
+    <addForeignKeyConstraint constraintName="es_6_encounter_id_fk" baseTableName="notificacion_noti" baseColumnNames="encounter_id" referencedTableName="encounter" referencedColumnNames="encounter_id"/>
+    <addForeignKeyConstraint constraintName="es_6_evento_notificable_id_fk" baseTableName="notificacion_noti" baseColumnNames="evento_notificable_id" referencedTableName="evento_notificable" referencedColumnNames="evento_notificable_id"/>
+  </changeSet>
+</databaseChangeLog>
+

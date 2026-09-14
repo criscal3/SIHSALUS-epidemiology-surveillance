@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "surveillanceStartDate": "<YYYY-MM-DD de cobertura verificada>",
+  "encounterTypeUuid": "<UUID tipo de atencion de vigilancia>",
+  "encounterRoleUuid": "<UUID rol del proveedor>",
+  "ethnicityAttributeTypeUuid": "<UUID atributo de etnia verificado>",
+  "pregnancyAttributeTypeUuid": null,
+  "icd10SourceUuid": "<UUID fuente CIE-10 existente>",
+  "duplicateWindowDays": 30,
+  "historicalYears": 5,
+  "minimumHistoricalYears": 3,
+  "timezone": "America/Lima",
+  "firstDayOfWeek": "SUNDAY",
+  "minimalDaysInFirstWeek": 4,
+  "analyticsDatasource": "primary",
+  "questions": {
+    "event": "<UUID pregunta event>",
+    "status": "<UUID pregunta status>",
+    "severity": "<UUID pregunta severity>",
+    "origin": "<UUID pregunta origin>",
+    "species": "<UUID pregunta species>",
+    "onset": "<UUID pregunta onset>",
+    "pregnancy": "<UUID pregunta pregnancy>",
+    "sourceEncounter": "<UUID pregunta sourceEncounter>",
+    "laboratoryResult": "<UUID pregunta laboratoryResult>",
+    "ethnicity": "<UUID pregunta ethnicity>"
+  },
+  "statuses": [
+    {
+      "key": "SUSPECTED",
+      "label": "<Etiqueta SUSPECTED>",
+      "conceptUuid": "<UUID respuesta SUSPECTED>"
+    },
+    {
+      "key": "CONFIRMED",
+      "label": "<Etiqueta CONFIRMED>",
+      "conceptUuid": "<UUID respuesta CONFIRMED>"
+    },
+    {
+      "key": "DISCARDED",
+      "label": "<Etiqueta DISCARDED>",
+      "conceptUuid": "<UUID respuesta DISCARDED>"
+    }
+  ],
+  "origins": [
+    {
+      "key": "AUTOCHTHONOUS",
+      "label": "<Etiqueta AUTOCHTHONOUS>",
+      "conceptUuid": "<UUID respuesta AUTOCHTHONOUS>"
+    },
+    {
+      "key": "IMPORTED_NATIONAL",
+      "label": "<Etiqueta IMPORTED_NATIONAL>",
+      "conceptUuid": "<UUID respuesta IMPORTED_NATIONAL>"
+    },
+    {
+      "key": "IMPORTED_INTERNATIONAL",
+      "label": "<Etiqueta IMPORTED_INTERNATIONAL>",
+      "conceptUuid": "<UUID respuesta IMPORTED_INTERNATIONAL>"
+    },
+    {
+      "key": "INDUCED",
+      "label": "<Etiqueta INDUCED>",
+      "conceptUuid": "<UUID respuesta INDUCED>"
+    },
+    {
+      "key": "INTRODUCED",
+      "label": "<Etiqueta INTRODUCED>",
+      "conceptUuid": "<UUID respuesta INTRODUCED>"
+    },
+    {
+      "key": "RELAPSE",
+      "label": "<Etiqueta RELAPSE>",
+      "conceptUuid": "<UUID respuesta RELAPSE>"
+    },
+    {
+      "key": "RECRUDESCENCE",
+      "label": "<Etiqueta RECRUDESCENCE>",
+      "conceptUuid": "<UUID respuesta RECRUDESCENCE>"
+    }
+  ],
+  "diseases": [
+    {
+      "eventUuid": "<UUID evento creado mediante POST events>",
+      "family": "DENGUE",
+      "severities": [
+        {
+          "key": "NO_WARNING",
+          "label": "<Etiqueta NO_WARNING>",
+          "conceptUuid": "<UUID gravedad NO_WARNING>"
+        },
+        {
+          "key": "WARNING",
+          "label": "<Etiqueta WARNING>",
+          "conceptUuid": "<UUID gravedad WARNING>"
+        },
+        {
+          "key": "SEVERE",
+          "label": "<Etiqueta SEVERE>",
+          "conceptUuid": "<UUID gravedad SEVERE>"
+        }
+      ],
+      "species": [],
+      "diagnoses": [
+        {
+          "severity": "NO_WARNING",
+          "species": null,
+          "diagnosisConceptUuid": "<UUID diagnostico existente NO_WARNING>"
+        },
+        {
+          "severity": "WARNING",
+          "species": null,
+          "diagnosisConceptUuid": "<UUID diagnostico existente WARNING>"
+        },
+        {
+          "severity": "SEVERE",
+          "species": null,
+          "diagnosisConceptUuid": "<UUID diagnostico existente SEVERE>"
+        }
+      ],
+      "laboratoryTests": [
+        {
+          "orderConceptUuid": "<UUID prueba local>",
+          "resultConceptUuid": "<UUID pregunta de resultado>",
+          "positiveAnswerUuids": [
+            "<UUID positivo>"
+          ],
+          "negativeAnswerUuids": [
+            "<UUID negativo>"
+          ]
+        }
+      ]
+    }
+  ]
+}

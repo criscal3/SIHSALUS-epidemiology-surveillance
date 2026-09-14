@@ -1,116 +1,176 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-
+<?xml version="1.0" encoding="utf-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.openmrs.maven.parents</groupId>
         <artifactId>maven-parent-openmrs-module</artifactId>
         <version>1.1.1</version>
     </parent>
-
-	<groupId>org.openmrs.module</groupId>
-	<artifactId>epidemiologysurveillance</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
-	<packaging>pom</packaging>
-	<name>Epidemiologysurveillance</name>
-	<description>no description</description>
-
-	<url>https://wiki.openmrs.org/x/FQ4z</url>
-
-	<scm>
-		<connection>scm:git:git@github.com:openmrs/openmrs-module-epidemiologysurveillance.git</connection>
-		<developerConnection>scm:git:git@github.com:openmrs/openmrs-module-epidemiologysurveillance.git</developerConnection>
-		<url>https://github.com/openmrs/openmrs-module-epidemiologysurveillance/</url>
-	</scm>
-
-	<modules>
-		<module>api</module>
-		<module>omod</module>
-	</modules>
-
-	<repositories>
-		<repository>
-			<id>openmrs-repo</id>
-			<name>OpenMRS Nexus Repository</name>
-			<url>https://mavenrepo.openmrs.org/public</url>
-		</repository>
-		<repository>
-			<id>central</id>
-			<name>Maven Repository Switchboard</name>
-			<layout>default</layout>
-			<url>https://repo1.maven.org/maven2</url>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>openmrs-repo</id>
-			<name>OpenMRS Nexus Repository</name>
-			<url>https://mavenrepo.openmrs.org/public</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</pluginRepository>
-	</pluginRepositories>
-
-	<build>
-		<pluginManagement>
-			<plugins>
-
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-compiler-plugin</artifactId>
-						<version>3.16.0</version>
-						<configuration>
-							<source>8</source>
-							<target>8</target>
-						</configuration>
-            	</plugin>
-				<!-- Spotless plugin -->
-				<plugin>
-					<groupId>com.diffplug.spotless</groupId>
-					<artifactId>spotless-maven-plugin</artifactId>
-					<version>2.27.2</version>
-					<configuration>
-						<java>
-							<licenseHeader>
-								<file>${project.basedir}/license-header.txt</file>
-							</licenseHeader>
-							<eclipse>
-								<file>${project.basedir}/OpenMRSFormatter.xml</file>
-							</eclipse>
-							<removeUnusedImports/>
-							<importOrder>
-								<order>javax,java</order>
-							</importOrder>
-						</java>
-						<formats>
-							<format>
-								<includes>
-									<include>**/*.xml</include>
-								</includes>
-								<licenseHeader>
-									<file>${project.basedir}/license-header.txt</file>
-									<delimiter>^(?!&lt;\?xml)</delimiter>
-								</licenseHeader>
-							</format>
-						</formats>
-					</configuration>
-					<executions>
-						<execution>
-							<id>spotless-apply</id>
-							<phase>validate</phase>
-							<goals>
-								<goal>apply</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-	</build>
-
-
+    <groupId>io.github.proyecto-santaclotilde</groupId>
+    <artifactId>sihsalusepidemiologicalsurveillance</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>SIH Salus Epidemiological Surveillance</name>
+    <description>Registro, alertas e indicadores de vigilancia epidemiologica para SIH Salus</description>
+    <url>https://wiki.openmrs.org/x/FQ4z</url>
+    <scm>
+        <connection>scm:git:https://github.com/criscal3/SIHSALUS-epidemiology-surveillance.git</connection>
+        <developerConnection>scm:git:git@github.com:criscal3/SIHSALUS-epidemiology-surveillance.git</developerConnection>
+        <url>https://github.com/criscal3/SIHSALUS-epidemiology-surveillance</url>
+    </scm>
+    <modules>
+        <module>api</module>
+        <module>omod</module>
+    </modules>
+    <repositories>
+        <repository>
+            <id>openmrs-repo</id>
+            <name>OpenMRS Nexus Repository</name>
+            <url>https://mavenrepo.openmrs.org/public</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <name>Maven Repository Switchboard</name>
+            <layout>default</layout>
+            <url>https://repo1.maven.org/maven2</url>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>openmrs-repo</id>
+            <name>OpenMRS Nexus Repository</name>
+            <url>https://mavenrepo.openmrs.org/public</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.13.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>3.12.4</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.5.3</version>
+                    <configuration>
+                        <argLine>@{argLine} ${testJvmArgs}</argLine>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.16.0</version>
+                    <configuration>
+                        <source>8</source>
+                        <target>8</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>net.revelc.code.formatter</groupId>
+                <artifactId>formatter-maven-plugin</artifactId>
+                <version>2.13.0</version>
+                <configuration>
+                    <lineEnding>LF</lineEnding>
+                    <configFile>eclipse/OpenMRSFormatter.xml</configFile>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.openmrs.tools</groupId>
+                        <artifactId>openmrs-tools</artifactId>
+                        <version>${openmrsPlatformToolsVersion}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>net.revelc.code</groupId>
+                <artifactId>impsort-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.plexus</groupId>
+                        <artifactId>plexus-utils</artifactId>
+                        <version>3.5.1</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <groups>javax, java, *</groups>
+                    <removeUnused>true</removeUnused>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>sort</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.14</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>org.openmrs.module.sihsalusepidemiologicalsurveillance.*</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
     <properties>
+        <javaCompilerSource>8</javaCompilerSource>
+        <javaCompilerTarget>8</javaCompilerTarget>
+        <testJvmArgs></testJvmArgs>
+        <argLine></argLine>
         <openmrsPlatformVersion>2.4.2</openmrsPlatformVersion>
     </properties>
+    <profiles>
+        <profile>
+            <id>modern-jdk</id>
+            <activation>
+                <jdk>[9,)</jdk>
+            </activation>
+            <properties>
+                <maven.compiler.release>8</maven.compiler.release>
+                <testJvmArgs>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.desktop/java.awt.font=ALL-UNNAMED -Dnet.bytebuddy.experimental=true</testJvmArgs>
+            </properties>
+        </profile>
+    </profiles>
 </project>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+ <changeSet id="7" author="sihsalus">
+  <insert tableName="scheduler_task_config">
+   <column name="name" value="SIH Salus surveillance counts"/>
+   <column name="description" value="Recalculate confirmed cases from native diagnoses and symptom-onset observations; requires verified metadata."/>
+   <column name="schedulable_class" value="org.openmrs.module.sihsalusepidemiologicalsurveillance.scheduler.RefreshCountsTask"/>
+   <column name="repeat_interval" valueNumeric="3600"/>
+   <column name="start_on_startup" valueBoolean="true"/>
+   <column name="started" valueBoolean="false"/>
+   <column name="uuid" value="1568be35-4d88-485b-9698-d6cda57f8c5e"/>
+   <column name="created_by" valueComputed="NULL"/>
+  </insert>
+ </changeSet>
+</databaseChangeLog>
