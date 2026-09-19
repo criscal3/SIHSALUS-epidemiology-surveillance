@@ -126,7 +126,7 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 		Context.flushSession();
 		Context.clearSession();
 		org.openmrs.Encounter persisted = Context.getEncounterService().getEncounterByUuid(result.uuid);
-		assertEquals(6, persisted.getAllObs(false).size());
+		assertEquals(5, persisted.getAllObs(false).size());
 		assertEquals(1, persisted.getDiagnoses().size());
 		assertEquals("A90", result.icd10);
 		assertEquals(visit.getUuid(), persisted.getVisit().getUuid());

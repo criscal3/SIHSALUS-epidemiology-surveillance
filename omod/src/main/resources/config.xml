@@ -34,11 +34,6 @@
         <name>Vigilancia Epidemiologica: Configurar</name>
         <description>Vigilancia Epidemiologica: Configurar</description>
     </privilege>
-    <globalProperty>
-        <property>sihsalusepidemiologicalsurveillance.metadata</property>
-        <defaultValue></defaultValue>
-        <description>Verified metadata JSON version 1. See README; missing configuration disables clinical operations.</description>
-    </globalProperty>
     <messages>
         <lang>en</lang>
         <file>messages.properties</file>

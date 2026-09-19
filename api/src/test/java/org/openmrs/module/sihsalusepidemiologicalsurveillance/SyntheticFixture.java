@@ -89,6 +89,7 @@ class SyntheticFixture {
 		source.setEncounterDatetime(new EpidemiologicalCalendar(m).date(LocalDate.of(2026, 1, 20)));
 		type.setUuid(uuid(11));
 		m.encounterTypeUuid = type.getUuid();
+		source.setEncounterType(type);
 		role.setUuid(uuid(12));
 		m.encounterRoleUuid = role.getUuid();
 		m.icd10SourceUuid = uuid(13);
@@ -119,6 +120,7 @@ class SyntheticFixture {
 			Metadata.DiagnosisMapping d = new Metadata.DiagnosisMapping();
 			d.severity = severity;
 			d.diagnosisConceptUuid = diagnosis.getUuid();
+			d.icd10Code = "A90";
 			disease.diagnoses.add(d);
 		}
 		int question = 30;

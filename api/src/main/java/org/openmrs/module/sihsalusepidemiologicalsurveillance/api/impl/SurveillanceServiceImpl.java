@@ -77,17 +77,19 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		if (patient == null || patient.getVoided())
 			throw new SurveillanceException(422, "INVALID_REFERENCE");
 		dao.lockPatient(patient);
-		Encounter existing = clinical.encounter(request.uuid);
-		if (existing != null) {
+		Encounter existing = clinical.encounter(request.sourceEncounterUuid);
+		if (existing != null && !existing.getVoided() && patient.equals(existing.getPatient())
+		        && existing.getEncounterType() != null
+		        && m.encounterTypeUuid.equals(existing.getEncounterType().getUuid())) {
 			Obs onset = CaseObservations.find(existing, m.questions.get("onset"));
-			if (existing.getVoided() || !patient.equals(existing.getPatient())
-			        || !m.encounterTypeUuid.equals(existing.getEncounterType().getUuid()) || existing.getCreator() == null
-			        || !existing.getCreator().equals(actor) || onset == null
-			        || !fingerprint(request).equals(onset.getComment()))
+			if (onset != null && (onset.getCreator() == null || !onset.getCreator().equals(actor)
+			        || !fingerprint(request).equals(onset.getComment())))
 				throw new SurveillanceException(409, "IDEMPOTENCY_CONFLICT");
-			CaseResult result = assess(existing, m);
-			result.replayed = true;
-			return result;
+			if (onset != null) {
+				CaseResult result = assess(existing, m);
+				result.replayed = true;
+				return result;
+			}
 		}
 		CaseValidator.Validated v = validator.validate(request, m, actor);
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
@@ -102,22 +104,7 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		EventoNotificable event = dao.byUuid(EventoNotificable.class, request.eventUuid);
 		// Serialize threshold crossings across patients; READ_COMMITTED observes the preceding commit after waiting.
 		dao.lockEvent(event);
-		Encounter encounter = new Encounter();
-		encounter.setUuid(request.uuid);
-		encounter.setPatient(v.patient);
-		encounter.setVisit(v.source.getVisit());
-		encounter.setLocation(v.location);
-		encounter.setEncounterDatetime(v.source.getEncounterDatetime());
-		encounter.setEncounterType(clinical.encounterType(m.encounterTypeUuid));
-		EncounterProvider participation = new EncounterProvider();
-		participation.setEncounter(encounter);
-		participation.setProvider(v.provider);
-		participation.setEncounterRole(clinical.encounterRole(m.encounterRoleUuid));
-		participation.setCreator(actor);
-		participation.setDateCreated(new Date());
-		encounter.getEncounterProviders().add(participation);
-		encounter.setCreator(actor);
-		encounter.setDateCreated(new Date());
+		Encounter encounter = v.source;
 		coded(encounter, m, "event", event.getConcept());
 		coded(encounter, m, "status", clinical.concept(MetadataResolver.choice(m.statuses, request.status).conceptUuid));
 		coded(encounter, m, "origin", clinical.concept(MetadataResolver.choice(m.origins, request.origin).conceptUuid));
@@ -129,31 +116,40 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		Obs onset = obs(encounter, m, "onset");
 		onset.setValueDatetime(calendar.date(v.onset));
 		onset.setComment(fingerprint(request));
-		text(encounter, m, "sourceEncounter", v.source.getUuid());
+		onset.setCreator(actor);
 		if (v.laboratory != null) {
 			Obs reference = text(encounter, m, "laboratoryResult", v.laboratory.getUuid());
 			reference.setOrder(v.laboratory.getOrder());
 		}
-		if (v.ethnicity != null)
-			text(encounter, m, "ethnicity", v.ethnicity);
-		if (v.pregnant != null)
+		if (v.ethnicity != null && CaseObservations.find(encounter, m.questions.get("ethnicity")) == null)
+			coded(encounter, m, "ethnicity", clinical.concept(v.ethnicity));
+		if (v.pregnant != null && CaseObservations.find(encounter, m.questions.get("pregnancy")) == null)
 			obs(encounter, m, "pregnancy").setValueCoded(v.pregnant ? clinical.trueConcept() : clinical.falseConcept());
 		clinical.saveEncounter(encounter);
-		Diagnosis diagnosis = new Diagnosis();
-		diagnosis.setEncounter(encounter);
-		diagnosis.setPatient(v.patient);
-		diagnosis.setDiagnosis(new CodedOrFreeText(v.diagnosis, null, null));
-		diagnosis.setRank(1);
-		diagnosis.setCertainty("CONFIRMED".equals(request.status) ? ConditionVerificationStatus.CONFIRMED
-		        : ConditionVerificationStatus.PROVISIONAL);
-		if ("DISCARDED".equals(request.status)) {
-			diagnosis.setVoided(true);
-			diagnosis.setVoidedBy(actor);
-			diagnosis.setDateVoided(new Date());
-			diagnosis.setVoidReason("Surveillance classification: discarded");
+		Diagnosis diagnosis = null;
+		Set<Diagnosis> encounterDiagnoses = encounter.getDiagnoses();
+		if (encounterDiagnoses == null) {
+			encounterDiagnoses = new HashSet<Diagnosis>();
+			encounter.setDiagnoses(encounterDiagnoses);
 		}
-		clinical.saveDiagnosis(diagnosis);
-		encounter.setDiagnoses(new HashSet<Diagnosis>(Arrays.asList(diagnosis)));
+		for (Diagnosis candidate : encounterDiagnoses)
+			if (!candidate.getVoided() && candidate.getDiagnosis() != null
+			        && v.diagnosis.equals(candidate.getDiagnosis().getCoded())) {
+				diagnosis = candidate;
+				break;
+			}
+		if (diagnosis == null && !"DISCARDED".equals(request.status)) {
+			diagnosis = new Diagnosis();
+			diagnosis.setEncounter(encounter);
+			diagnosis.setPatient(v.patient);
+			diagnosis.setDiagnosis(new CodedOrFreeText(v.diagnosis, null, null));
+			diagnosis.setRank(1);
+			diagnosis.setCertainty("CONFIRMED".equals(request.status) ? ConditionVerificationStatus.CONFIRMED
+			        : ConditionVerificationStatus.PROVISIONAL);
+			clinical.saveDiagnosis(diagnosis);
+		}
+		if (diagnosis != null)
+			encounterDiagnoses.add(diagnosis);
 		CaseResult result = assess(encounter, m);
 		audit(actor, "registro", "encounter", encounter.getId());
 		if (!result.immediateAlerts.isEmpty() || !result.outbreakAlerts.isEmpty())
@@ -166,8 +162,9 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		User actor = access.require(SurveillanceConstants.VIEW);
 		Metadata m = metadata.get();
 		Encounter encounter = clinical.encounter(uuid);
-		if (encounter == null || encounter.getVoided()
-		        || !m.encounterTypeUuid.equals(encounter.getEncounterType().getUuid()))
+		if (encounter == null || encounter.getVoided() || encounter.getEncounterType() == null
+		        || !m.encounterTypeUuid.equals(encounter.getEncounterType().getUuid())
+		        || CaseObservations.find(encounter, m.questions.get("event")) == null)
 			throw new SurveillanceException(404, "CASE_NOT_FOUND");
 		audit(actor, "consulta", "encounter", encounter.getId());
 		return assess(encounter, m);
@@ -181,13 +178,22 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 			throw new SurveillanceException(422, "INVALID_CASE_DATA");
 		CaseResult result = new CaseResult();
 		result.uuid = encounter.getUuid();
-		for (Diagnosis diagnosis : encounter.getDiagnoses()) {
-			if (diagnosis.getDiagnosis() != null && diagnosis.getDiagnosis().getCoded() != null) {
-				result.diagnosisConceptUuid = diagnosis.getDiagnosis().getCoded().getUuid();
-				result.icd10 = MetadataResolver.icd10(diagnosis.getDiagnosis().getCoded(), m);
+		Metadata.Disease disease = MetadataResolver.disease(m, record.eventUuid);
+		String species = CaseObservations.choiceKey(disease.species, CaseObservations.coded(encounter, m, "species"));
+		Metadata.DiagnosisMapping selected = null;
+		for (Metadata.DiagnosisMapping mapping : disease.diagnoses)
+			if (Objects.equals(mapping.severity, record.severity) && Objects.equals(mapping.species, species)) {
+				selected = mapping;
 				break;
 			}
-		}
+		if (selected == null && "SEVERE".equals(record.severity))
+			for (Metadata.DiagnosisMapping mapping : disease.diagnoses)
+				if ("SEVERE".equals(mapping.severity) && mapping.species == null)
+					selected = mapping;
+		if (selected == null)
+			throw new SurveillanceException(422, "INVALID_CASE_DATA");
+		result.diagnosisConceptUuid = selected.diagnosisConceptUuid;
+		result.icd10 = selected.icd10Code;
 		result.periodicity = event.getPeriodicidad();
 		result.deadlineDays = event.getPlazoDias();
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);

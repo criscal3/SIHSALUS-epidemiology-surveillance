@@ -13,19 +13,20 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.*;
 import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.*;
 
 public class SurveillanceServiceTest {
-	
+
 	@Test
-	public void registrationPersistsNativeEncounterDiagnosisAndAudit() {
+	public void registrationCompletesExistingEncounterDiagnosisAndAudit() {
 		SyntheticFixture f = new SyntheticFixture();
 		CaseResult result = f.service.registerCase(f.request);
-		assertEquals(f.request.uuid, result.uuid);
+		assertEquals(f.source.getUuid(), result.uuid);
 		assertEquals("A90", result.icd10);
 		assertEquals("semanal", result.periodicity);
 		ArgumentCaptor<Encounter> capture = ArgumentCaptor.forClass(Encounter.class);
 		verify(f.clinical).saveEncounter(capture.capture());
 		Encounter e = capture.getValue();
-		assertSame(f.source.getVisit(), e.getVisit());
-		assertEquals(6, e.getAllObs(false).size());
+		assertSame(f.source, e);
+		assertEquals(5, e.getAllObs(false).size());
+		assertEquals(f.source.getUuid(), e.getUuid());
 		verify(f.clinical).saveDiagnosis(any(Diagnosis.class));
 		verify(f.dao).save(any(AuditoriaVigilancia.class));
 		org.mockito.InOrder order = inOrder(f.dao, f.clinical);
@@ -33,7 +34,23 @@ public class SurveillanceServiceTest {
 		order.verify(f.dao).lockEvent(f.event);
 		order.verify(f.clinical).saveEncounter(any(Encounter.class));
 	}
-	
+
+	@Test
+	public void preservesExistingPregnancyObservationAndMatchingDiagnosis() {
+		SyntheticFixture f = new SyntheticFixture();
+		Obs pregnancy = new Obs(f.patient, f.clinical.concept(f.m.questions.get("pregnancy")),
+		        f.source.getEncounterDatetime(), f.location);
+		pregnancy.setValueCoded(f.clinical.trueConcept());
+		f.source.addObs(pregnancy);
+		Diagnosis existing = new Diagnosis();
+		existing.setDiagnosis(new CodedOrFreeText(f.diagnosis, null, null));
+		f.source.setDiagnoses(new HashSet<Diagnosis>(Arrays.asList(existing)));
+		f.service.registerCase(f.request);
+		assertSame(pregnancy, CaseObservations.find(f.source, f.m.questions.get("pregnancy")));
+		assertSame(existing, f.source.getDiagnoses().iterator().next());
+		verify(f.clinical, never()).saveDiagnosis(any(Diagnosis.class));
+	}
+
 	@Test
 	public void duplicatePreventsAnyClinicalWrite() {
 		SyntheticFixture f = new SyntheticFixture();
@@ -48,25 +65,23 @@ public class SurveillanceServiceTest {
 		}
 		verify(f.clinical, never()).saveEncounter(any());
 	}
-	
+
 	@Test
 	public void retryReturnsSameEncounterWithoutSecondWrite() {
 		SyntheticFixture f = new SyntheticFixture();
 		f.service.registerCase(f.request);
 		ArgumentCaptor<Encounter> capture = ArgumentCaptor.forClass(Encounter.class);
 		verify(f.clinical).saveEncounter(capture.capture());
-		when(f.clinical.encounter(f.request.uuid)).thenReturn(capture.getValue());
 		assertTrue(f.service.registerCase(f.request).replayed);
 		verify(f.clinical, times(1)).saveEncounter(any());
 	}
-	
+
 	@Test
 	public void changedPayloadCannotOverwriteSuccessfulRequest() {
 		SyntheticFixture f = new SyntheticFixture();
 		f.service.registerCase(f.request);
 		ArgumentCaptor<Encounter> capture = ArgumentCaptor.forClass(Encounter.class);
 		verify(f.clinical).saveEncounter(capture.capture());
-		when(f.clinical.encounter(f.request.uuid)).thenReturn(capture.getValue());
 		f.request.severity = "SEVERE";
 		try {
 			f.service.registerCase(f.request);
@@ -77,7 +92,7 @@ public class SurveillanceServiceTest {
 		}
 		verify(f.clinical, times(1)).saveEncounter(any());
 	}
-	
+
 	@Test
 	public void deniedWriteDoesNotReadClinicalData() {
 		SyntheticFixture f = new SyntheticFixture();
@@ -91,7 +106,7 @@ public class SurveillanceServiceTest {
 		}
 		verify(f.clinical, never()).patient(anyString());
 	}
-	
+
 	@Test
 	public void deniedReportsDoNotReadAnyCases() {
 		SyntheticFixture f = new SyntheticFixture();
@@ -105,7 +120,7 @@ public class SurveillanceServiceTest {
 		}
 		verify(f.dao, never()).encounters(anyString(), any(), any(), anyString());
 	}
-	
+
 	@Test
 	public void severeCaseOverridesConfiguredWeeklyPeriodicity() {
 		SyntheticFixture f = new SyntheticFixture();
@@ -116,7 +131,7 @@ public class SurveillanceServiceTest {
 		assertTrue(result.immediateAlerts.contains("SEVERE_CASE"));
 		verify(f.clinical).alert(eq(f.actor), anyString());
 	}
-	
+
 	@Test
 	public void refreshUsesCoverageAndReplacesAggregates() {
 		SyntheticFixture f = new SyntheticFixture();

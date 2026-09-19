@@ -32,10 +32,10 @@ F938F1CD676B94199E6D2F3DE3EC4A396F265245B4CDB87909EE6822ABF19462
 Frontend, desde `sihsalus-frontend`:
 
 ```sh
-yarn workspace @sihsalus/esm-epidemiological-surveillance lint
-yarn workspace @sihsalus/esm-epidemiological-surveillance typescript
-yarn workspace @sihsalus/esm-epidemiological-surveillance test
-yarn workspace @sihsalus/esm-epidemiological-surveillance build
+yarn workspace @sihsalus/esm-epidemiological-surveillance-app lint
+yarn workspace @sihsalus/esm-epidemiological-surveillance-app typescript
+yarn workspace @sihsalus/esm-epidemiological-surveillance-app test
+yarn workspace @sihsalus/esm-epidemiological-surveillance-app build
 node packages/tooling/scripts/validate-error-exposure.js --base HEAD
 node packages/tooling/scripts/validate-critical-route-privileges.js
 node packages/tooling/scripts/audit-workspaces.js
@@ -85,3 +85,9 @@ La implementación aborda 16/28 RF y RNF-04/05/06 del plan. **No se declara cier
 8. **Usabilidad:** revisión humana con teclado, lector de pantalla, tamaños móvil/tablet y responsables de epidemiología. No se midió el objetivo de carga de tres segundos ni se ejecutó E2E en navegador real.
 
 La réplica analítica, exportación NOTI, auditoría completa/retención y demás RF excluidos permanecen fuera de iteración 1.
+
+## Actualización local — 2026-09-19
+
+La vigilancia ahora completa la atención de metaxénicas existente y usa el catálogo Java fijo. Se ejecutó `mvn '-Dmaven.repo.local=C:\Users\smith\.m2\repository' package -q`: **64/64 pruebas backend exitosas** (61 API y 3 OMOD) y artefacto OMOD generado. En el ESM se ejecutaron `yarn.cmd workspace @sihsalus/esm-epidemiological-surveillance-app test`, `typescript`, `lint` y `build`: **36/36 pruebas exitosas**, tipos, estilo y compilación correctos. `yarn.cmd prettier --check packages/apps/esm-epidemiological-surveillance-app/README.md` también pasó. Estas cifras sustituyen las de la tabla histórica para el diff actual; no se analizaron métricas de cobertura actualizadas ni un flujo clínico desplegado.
+
+Se contrastaron los 55 UUID del catálogo Java con CSV y el export OCL de diagnósticos de `sihsalus-content`: 53 son contenido publicado y dos son UUID administrativos de eventos del OMOD. Los diez diagnósticos de `docs/vigilancia.json` usaban inicialmente IDs numéricos OCL; ahora usan los `external_id` UUID y códigos CIE-10 del export. Falta comprobar en DEV/QLTY que todo ese contenido esté importado y que el changeset de eventos se haya aplicado después del import; si los conceptos llegaron más tarde, crear los eventos mediante `POST /events`. Sigue pendiente verificar el flujo con pacientes sintéticos, la política temporal de gestación y el calendario/cobertura epidemiológica.

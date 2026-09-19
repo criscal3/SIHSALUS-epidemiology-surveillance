@@ -8,36 +8,38 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.db.ClinicalDat
 import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.*;
 
 public class CaseValidator {
-	
+
 	private ClinicalData clinical;
-	
+
 	public void setClinical(ClinicalData value) {
 		clinical = value;
 	}
-	
+
 	public static class Validated {
-		
+
 		public Patient patient;
-		
+
 		public Encounter source;
-		
+
 		public Location location;
-		
+
 		public Provider provider;
-		
+
 		public Concept diagnosis;
-		
+
+		public String icd10;
+
 		public Obs laboratory;
-		
+
 		public LocalDate onset;
-		
+
 		public Boolean pregnant;
-		
+
 		public String ethnicity;
-		
+
 		public Metadata.Disease disease;
 	}
-	
+
 	public Validated validate(CaseRequest r, Metadata m, User actor) {
 		List<String> missing = new ArrayList<String>();
 		if (r == null)
@@ -70,7 +72,11 @@ public class CaseValidator {
 		        || v.source.getEncounterDatetime() == null || v.source.getEncounterDatetime().after(new Date())
 		        || v.source.getVisit().getVoided() || !v.patient.equals(v.source.getVisit().getPatient()))
 			throw new SurveillanceException(422, "INVALID_SOURCE_ENCOUNTER");
+		if (v.source.getEncounterType() == null || !m.encounterTypeUuid.equals(v.source.getEncounterType().getUuid()))
+			throw new SurveillanceException(422, "INVALID_SOURCE_ENCOUNTER");
 		if (v.location == null || v.location.getRetired())
+			throw new SurveillanceException(422, "INVALID_LOCATION");
+		if (v.source.getLocation() == null || !v.source.getLocation().equals(v.location))
 			throw new SurveillanceException(422, "INVALID_LOCATION");
 		if (v.provider == null || v.provider.getRetired() || v.provider.getPerson() == null || actor == null
 		        || !v.provider.getPerson().equals(actor.getPerson()))
@@ -95,13 +101,21 @@ public class CaseValidator {
 			MetadataResolver.choice(v.disease.species, r.species);
 		else if (MetadataResolver.present(r.species))
 			throw new SurveillanceException(422, "INVALID_CLASSIFICATION");
-		for (Metadata.DiagnosisMapping mapping : v.disease.diagnoses) {
-			if (Objects.equals(mapping.severity, r.severity) && Objects.equals(empty(mapping.species), empty(r.species)))
+		for (Metadata.DiagnosisMapping mapping : v.disease.diagnoses)
+			if (Objects.equals(mapping.severity, r.severity) && Objects.equals(empty(mapping.species), empty(r.species))) {
 				v.diagnosis = clinical.concept(mapping.diagnosisConceptUuid);
-		}
+				v.icd10 = mapping.icd10Code;
+			}
+		if (v.diagnosis == null && "SEVERE".equals(r.severity))
+			for (Metadata.DiagnosisMapping mapping : v.disease.diagnoses)
+				if ("SEVERE".equals(mapping.severity) && !MetadataResolver.present(mapping.species)) {
+					v.diagnosis = clinical.concept(mapping.diagnosisConceptUuid);
+					v.icd10 = mapping.icd10Code;
+				}
 		if (v.diagnosis == null || v.diagnosis.getRetired())
 			throw new SurveillanceException(422, "DIAGNOSIS_MAPPING_UNAVAILABLE");
-		MetadataResolver.icd10(v.diagnosis, m);
+		if (!MetadataResolver.present(v.icd10))
+			v.icd10 = MetadataResolver.icd10(v.diagnosis, m);
 		validateLab(r, m, v, calendar);
 		Obs pregnancy = CaseObservations.find(v.source, m.questions.get("pregnancy"));
 		if (pregnancy != null)
@@ -118,13 +132,20 @@ public class CaseValidator {
 		if (MetadataResolver.present(m.ethnicityAttributeTypeUuid)) {
 			PersonAttribute attr = v.patient.getAttribute(clinical.attributeType(m.ethnicityAttributeTypeUuid));
 			if (attr != null && !attr.getVoided())
-				v.ethnicity = attr.getValue();
+				try {
+					Concept ethnicity = clinical.concept(Integer.valueOf(attr.getValue()));
+					if (ethnicity != null && !ethnicity.getRetired())
+						v.ethnicity = ethnicity.getUuid();
+				}
+				catch (NumberFormatException ignored) {
+					// An invalid person attribute must not be represented as a clinical concept.
+				}
 		}
 		if (v.ethnicity == null)
-			v.ethnicity = CaseObservations.text(v.source, m, "ethnicity");
+			v.ethnicity = CaseObservations.coded(v.source, m, "ethnicity");
 		return v;
 	}
-	
+
 	private void validateLab(CaseRequest r, Metadata m, Validated v, EpidemiologicalCalendar calendar) {
 		if (!MetadataResolver.present(r.laboratoryResultUuid)) {
 			if (!"SUSPECTED".equals(r.status))
@@ -157,7 +178,7 @@ public class CaseValidator {
 		if (expected == null || !expected.equals(r.status))
 			throw new SurveillanceException(422, "LAB_STATUS_CONFLICT");
 	}
-	
+
 	private static String empty(String value) {
 		return value == null ? "" : value;
 	}

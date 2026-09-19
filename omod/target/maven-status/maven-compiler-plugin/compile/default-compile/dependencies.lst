@@ -1,4 +1,4 @@
-classpath:C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\target\epidemiologysurveillance-api-1.0.0-SNAPSHOT.jar	9861:1788910872849
+classpath:C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\target\sihsalusepidemiologicalsurveillance-api-1.0.0-SNAPSHOT.jar	79658:1789833855258
 classpath:C:\Users\smith\.m2\repository\org\openmrs\web\openmrs-web\2.4.2\openmrs-web-2.4.2.jar	160811:1788907797267
 classpath:C:\Users\smith\.m2\repository\javax\servlet\jsp-api\2.0\jsp-api-2.0.jar	50493:1788907797949
 classpath:C:\Users\smith\.m2\repository\javax\servlet\servlet-api\2.4\servlet-api-2.4.jar	97693:1788907801358
@@ -31,11 +31,6 @@ classpath:C:\Users\smith\.m2\repository\org\apache\struts\struts-taglib\1.3.8\st
 classpath:C:\Users\smith\.m2\repository\org\apache\struts\struts-tiles\1.3.8\struts-tiles-1.3.8.jar	119653:1788907808428
 classpath:C:\Users\smith\.m2\repository\org\owasp\encoder\encoder\1.2.2\encoder-1.2.2.jar	37529:1788907803124
 classpath:C:\Users\smith\.m2\repository\org\openmrs\web\openmrs-web\2.4.2\openmrs-web-2.4.2-tests.jar	34413:1788907803418
-classpath:C:\Users\smith\.m2\repository\org\openmrs\module\legacyui-omod\1.3.3\legacyui-omod-1.3.3.jar	3945007:1788910879046
-classpath:C:\Users\smith\.m2\repository\org\openmrs\module\legacyui-api\1.3.3\legacyui-api-1.3.3.jar	3919:1788910880237
-classpath:C:\Users\smith\.m2\repository\org\openmrs\directwebremoting\dwr\2.0.7-mod\dwr-2.0.7-mod.jar	515611:1788910880771
-classpath:C:\Users\smith\.m2\repository\jfree\jfreechart\1.0.12\jfreechart-1.0.12.jar	1368681:1788910882566
-classpath:C:\Users\smith\.m2\repository\jfree\jcommon\1.0.15\jcommon-1.0.15.jar	309294:1788910880012
 classpath:C:\Users\smith\.m2\repository\org\openmrs\api\openmrs-api\2.4.2\openmrs-api-2.4.2.jar	2831872:1788907720809
 classpath:C:\Users\smith\.m2\repository\commons-collections\commons-collections\3.2.2\commons-collections-3.2.2.jar	588337:1788903833890
 classpath:C:\Users\smith\.m2\repository\org\apache\commons\commons-lang3\3.11\commons-lang3-3.11.jar	577742:1788907723146
@@ -61,7 +56,6 @@ classpath:C:\Users\smith\.m2\repository\ca\uhn\hapi\hapi-structures-v26\2.1\hapi
 classpath:C:\Users\smith\.m2\repository\org\javassist\javassist\3.27.0-GA\javassist-3.27.0-GA.jar	782774:1788907728073
 classpath:C:\Users\smith\.m2\repository\org\hibernate\hibernate-core\5.4.21.Final\hibernate-core-5.4.21.Final.jar	7327515:1788907729437
 classpath:C:\Users\smith\.m2\repository\javax\persistence\javax.persistence-api\2.2\javax.persistence-api-2.2.jar	164556:1788907729008
-classpath:C:\Users\smith\.m2\repository\net\bytebuddy\byte-buddy\1.10.10\byte-buddy-1.10.10.jar	3472118:1788907730150
 classpath:C:\Users\smith\.m2\repository\antlr\antlr\2.7.7\antlr-2.7.7.jar	445288:1788903835012
 classpath:C:\Users\smith\.m2\repository\org\jboss\spec\javax\transaction\jboss-transaction-api_1.2_spec\1.1.1.Final\jboss-transaction-api_1.2_spec-1.1.1.Final.jar	26290:1788907729754
 classpath:C:\Users\smith\.m2\repository\org\jboss\jandex\2.1.3.Final\jandex-2.1.3.Final.jar	195684:1788907729506
@@ -122,3 +116,4 @@ classpath:C:\Users\smith\.m2\repository\com\sun\activation\jakarta.activation\2.
 classpath:C:\Users\smith\.m2\repository\org\apache\lucene\lucene-analyzers-phonetic\5.5.5\lucene-analyzers-phonetic-5.5.5.jar	26126:1788907745167
 classpath:C:\Users\smith\.m2\repository\org\apache\lucene\lucene-analyzers-common\5.5.5\lucene-analyzers-common-5.5.5.jar	1576592:1788907746003
 classpath:C:\Users\smith\.m2\repository\commons-codec\commons-codec\1.10\commons-codec-1.10.jar	284184:1788907745831
+classpath:C:\Users\smith\.m2\repository\net\bytebuddy\byte-buddy\1.11.13\byte-buddy-1.11.13.jar	3611664:1789409239136

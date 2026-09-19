@@ -83,5 +83,17 @@
     <addForeignKeyConstraint constraintName="es_6_encounter_id_fk" baseTableName="notificacion_noti" baseColumnNames="encounter_id" referencedTableName="encounter" referencedColumnNames="encounter_id"/>
     <addForeignKeyConstraint constraintName="es_6_evento_notificable_id_fk" baseTableName="notificacion_noti" baseColumnNames="evento_notificable_id" referencedTableName="evento_notificable" referencedColumnNames="evento_notificable_id"/>
   </changeSet>
+  <changeSet id="7" author="sihsalus">
+    <comment>Provisiona eventos cuando los conceptos importados existen; nunca supone concept_id local</comment>
+    <sql>
+      INSERT INTO evento_notificable (uuid, concept_id, nombre, periodicidad, plazo_dias)
+      SELECT 'bfed631e-99de-5e50-a3a6-cbfec73437a1', c.concept_id, 'Dengue', 'semanal', 7
+      FROM concept c WHERE c.uuid = '41cb3fbf-f50c-4d7d-87bc-1b5dd963f8d0'
+        AND NOT EXISTS (SELECT 1 FROM evento_notificable WHERE uuid = 'bfed631e-99de-5e50-a3a6-cbfec73437a1' OR concept_id = c.concept_id);
+      INSERT INTO evento_notificable (uuid, concept_id, nombre, periodicidad, plazo_dias)
+      SELECT 'ae35724f-6a37-5777-8fc9-799f5733e899', c.concept_id, 'Malaria', 'semanal', 7
+      FROM concept c WHERE c.uuid = 'fae143be-b2c2-4d55-86de-09cf708911d6'
+        AND NOT EXISTS (SELECT 1 FROM evento_notificable WHERE uuid = 'ae35724f-6a37-5777-8fc9-799f5733e899' OR concept_id = c.concept_id);
+    </sql>
+  </changeSet>
 </databaseChangeLog>
-

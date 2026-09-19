@@ -20,9 +20,9 @@ Los nombres abreviados corresponden a `Vigilancia Epidemiologica: <nombre>`. No 
 
 ```json
 {
-  "uuid": "<UUID nuevo estable>",
+  "uuid": "<UUID estable de la solicitud>",
   "patientUuid": "<paciente existente>",
-  "sourceEncounterUuid": "<atencion existente ligada a visita>",
+  "sourceEncounterUuid": "<atención existente de metaxénicas ligada a visita>",
   "providerUuid": "<proveedor del usuario>",
   "locationUuid": "<localidad activa>",
   "eventUuid": "<evento configurado>",
@@ -41,7 +41,7 @@ CaseResult: `uuid, diagnosisConceptUuid, icd10, periodicity, deadlineDays, repla
 
 Alerta inmediata: `SEVERE_CASE,DEATH,ELIMINATED_FOCUS,NON_RECEPTIVE_FOCUS,CONFIRMED_PREGNANCY`. Brote: `EPIDEMIC_THRESHOLD,SUSTAINED_INCREASE,AUTOCHTHONOUS_ELIMINATED`. Advertencias: `FOCUS_UNKNOWN,PREGNANCY_UNKNOWN,INSUFFICIENT_HISTORY`.
 
-El POST es transaccional e idempotente por UUID+autor+contenido. Reintentos no escriben otro caso. El GET vuelve a evaluar el registro con la información disponible; no sustituye el historial identificable de OpenMRS.
+El POST es transaccional e idempotente por atención+UUID de solicitud+autor+contenido. Completa la atención existente; no crea otra. `CaseResult.uuid` y `GET /cases/{uuid}` usan el UUID de esa atención. Una atención ya completada con otra solicitud/contenido produce 409. El GET vuelve a evaluar el registro con la información disponible; no sustituye el historial identificable de OpenMRS.
 
 ## Reporte
 

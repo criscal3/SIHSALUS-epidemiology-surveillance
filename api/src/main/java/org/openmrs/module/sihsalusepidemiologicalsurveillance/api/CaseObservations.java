@@ -53,7 +53,7 @@ public class CaseObservations {
 		if (e.getPatient().getBirthdate() != null)
 			result.birthDate = calendar.local(e.getPatient().getBirthdate());
 		result.gender = e.getPatient().getGender();
-		result.ethnicity = text(e, m, "ethnicity");
+		result.ethnicity = coded(e, m, "ethnicity");
 		Obs pregnancy = find(e, m.questions.get("pregnancy"));
 		result.pregnant = pregnancy == null ? null : booleanValue(pregnancy, m);
 		result.deceased = Boolean.TRUE.equals(e.getPatient().getDead());

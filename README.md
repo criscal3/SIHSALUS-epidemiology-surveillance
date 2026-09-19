@@ -2,9 +2,9 @@
 
 OMOD de la iteración 1 (RE 3.1). Identidad: `io.github.proyecto-santaclotilde:sihsalusepidemiologicalsurveillance:1.0.0-SNAPSHOT`. OpenMRS **2.4.2**, parent SDK **1.1.1**, bytecode Java **8**.
 
-Implementa registro de casos, alertas inmediatas y de brote, conteos programados y reportes. Frontend: `@sihsalus/esm-epidemiological-surveillance`. Terminología: visita = consulta; encounter = atención.
+Implementa registro de casos, alertas inmediatas y de brote, conteos programados y reportes. Frontend: `@sihsalus/esm-epidemiological-surveillance-app`. Terminología: visita = consulta; encounter = atención.
 
-**Estado:** implementación y pruebas locales con datos sintéticos. Las operaciones clínicas permanecen bloqueadas hasta configurar metadatos existentes y verificados. No se precargan UUID clínicos de producción ni datos demo. El [informe RE 3.1](docs/informe-pruebas-iteracion-1.md) distingue pruebas locales de aceptación pendiente.
+**Estado:** implementación y pruebas locales con datos sintéticos. El catálogo de UUID está en `SurveillanceCatalog.java`; el OMOD comprueba que los conceptos y eventos existan antes de operar. El [informe RE 3.1](docs/informe-pruebas-iteracion-1.md) distingue pruebas locales de aceptación pendiente.
 
 ## Alcance
 
@@ -23,37 +23,37 @@ Son 16 de 28 RF previstos; esto indica **alcance implementado, no aceptación cl
 
 - `api/`: entidades Hibernate, DAO, servicio transaccional, validadores, cálculos y scheduler.
 - `omod/`: descriptor y controlador Spring MVC siguiendo la referencia imaging; publica `/openmrs/ws/rest/v1/sihsalusepidemiologicalsurveillance`.
-- Un caso crea **Encounter, Diagnosis y Obs nativos**, asociado a la visita fuente. Clasificación codificada, inicio de síntomas Date y referencias Text a UUID de atención/resultado; la última conserva el TestOrder.
-- El encounter usa la fecha de la atención fuente para permitir captura retrospectiva y sincronización después de cerrar la visita. Creación y auditoría registran el guardado efectivo.
-- Un descartado conserva su clasificación en Obs; su Diagnosis queda anulado y excluido de diagnósticos activos/conteos. Esta convención requiere aceptación clínica.
+- El registro **completa la atención existente «Atención de Enfermedades Metaxénicas»** (`ff7327ce-f06e-4a2e-ba2a-8ef0cf7b89d7`): agrega Obs nativas y un Diagnosis solo si falta. Conserva UUID, fecha, visita, localidad, profesional y datos previos de esa atención. La referencia textual al resultado conserva el TestOrder.
+- El `uuid` de la solicitud identifica el intento idempotente; el `uuid` de la respuesta identifica la atención ya existente. La huella del intento queda en la Obs de inicio de síntomas.
+- Un descartado conserva su clasificación en Obs y no genera un diagnóstico nuevo; tampoco anula diagnósticos previos de la atención. Los reportes solo cuentan confirmados. Esta convención requiere aceptación clínica.
 - Las seis tablas nuevas son `evento_notificable`, `regla_alerta_brote`, `conteo_casos_periodo`, `foco_epidemiologico`, `auditoria_vigilancia` y `notificacion_noti`. UUID únicos y claves foráneas reales; conteo único por evento/periodo/año/número.
 - Se conserva el changeset original del scaffold por compatibilidad; su tabla no se utiliza. Changesets nuevos incrementales 1–7; sin borrado de auditoría.
 - Todo acceso usa la **base original**. Solo se admite `analyticsDatasource: "primary"`; `"replica"` se rechaza. El datasource de réplica requiere implementación y pruebas posteriores.
 
 ## Preparación del contenido
 
-La global property `sihsalusepidemiologicalsurveillance.metadata` contiene JSON versión 1. Véase [metadata.example.json](docs/metadata.example.json): los marcadores `<...>` **no son UUID ni un seed ejecutable**.
+No se usa un archivo JSON ni una global property de metadatos en ejecución. `docs/vigilancia.json` sirvió para contrastar los valores con `sihsalus-content`; sus identificadores numéricos OCL de diagnósticos fueron sustituidos por los `external_id` UUID de OpenMRS y códigos CIE-10 publicados en ese contenido. El catálogo Java es la fuente de ejecución.
 
-1. Consultar Concept, ConceptSource, EncounterType, EncounterRole y PersonAttributeType existentes mediante [OpenMRS REST](https://rest.openmrs.org/) o una exportación autorizada. Verificar nombres, tipos, respuestas y mappings CIE-10; no deducir identidad por nombres similares.
-2. Crear eventos administrativos con `POST /events`, vinculados a conceptos clínicos existentes. El UUID del evento es nuevo; el concepto asociado ya debe existir y no puede cambiarse posteriormente.
-3. Completar la global property mediante la administración de OpenMRS. El servidor valida referencias, tipos de preguntas, respuestas permitidas y mappings inequívocos por gravedad/especie.
+1. Cargar el contenido de `sihsalus-content` y comprobar en la instancia los conceptos, respuestas, tipo de atención, rol y atributo Etnia. Los UUID de diagnósticos vienen de `external_id` en el export OCL; la columna `uuid` de ese export es un identificador OCL numérico.
+2. Instalar el OMOD. El changeset 7 crea los eventos administrativos de dengue y malaria solo si los conceptos respectivos existen; nunca supone un `concept_id` local. `GET /metadata` falla con 503 si faltan eventos o referencias requeridas.
+3. Comprobar que los códigos de diagnóstico y la atención existente correspondan al contenido cargado. El servidor valida preguntas, respuestas y referencias antes del registro.
 4. Crear reglas mediante `POST /rules`. Poblar focos revisados por epidemiología; no hay clasificación automática ni pantalla administrativa de focos todavía.
 5. Establecer fecha inicial de **cobertura completa y verificada**, calendario, ventana de duplicados y años históricos. No declarar cobertura antigua para fabricar ceros.
 6. Asignar privilegios, recalcular con `POST /counts/refresh` y verificar catálogo, casos y reportes con pacientes sintéticos.
 
-Preguntas requeridas: `event,status,severity,origin,species` Coded; `onset` Date; `pregnancy` Boolean; `sourceEncounter,laboratoryResult,ethnicity` Text. Verdadero/falso se resuelven desde los conceptos booleanos nativos. Si falta contenido técnico de procedencia, preparar un changelog después de verificar su ausencia; no sustituir conceptos por semejanza.
+Preguntas requeridas: `event,status,severity,origin,species,pregnancy,ethnicity` Coded; `onset` Date; `laboratoryResult` Text. Verdadero/falso se resuelven desde los conceptos booleanos nativos. La pregunta de evento no tiene respuestas declaradas en `sihsalus-content`; el servidor restringe el valor a los dos eventos del catálogo fijo. Si falta contenido técnico, se requiere un changelog de contenido; no sustituir conceptos por semejanza.
 
 Claves de estado: `SUSPECTED,CONFIRMED,DISCARDED`. Orígenes: `AUTOCHTHONOUS,IMPORTED_NATIONAL,IMPORTED_INTERNATIONAL,INDUCED,INTRODUCED,RELAPSE,RECRUDESCENCE`. La gravedad grave usa `SEVERE`; etiquetas y conceptos son configurables. Malaria requiere especies y sus mappings; dengue puede omitir especies. Configurar cada prueba local (gota gruesa/PDR, serología/NS1) con concepto de orden, pregunta de resultado y respuestas positivas/negativas verificadas. No se interpreta texto libre como resultado.
 
 ### Etnia y gestación
 
-Etnia: PersonAttributeType configurado o Obs Text de la atención fuente. Gestación: Obs Boolean explícita de esa atención; opcionalmente un PersonAttributeType **Boolean verificado**. Lo desconocido sigue siendo desconocido.
+Etnia: PersonAttributeType `8d871386-c2cc-11de-8d13-0010c6dffd0f` de tipo Concept, u Obs Coded de la atención. Gestación: Obs Coded explícita de esa atención; no se configura un atributo de persona sin confirmar una fuente temporal. Lo desconocido sigue siendo desconocido.
 
 Se revisó `esm-crecimiento-desarrollo-app/src/hooks/useCurrentPregnancy.ts`: obtiene un episodio prenatal asociado a `OBST-002-EMBARAZO ACTUAL`. Eso no demuestra por sí solo gestación vigente; tampoco se infiere a partir de FUM. No se confirmó el atributo real ni se creó uno potencialmente duplicado. Si se verifica su ausencia, queda pendiente incorporarlo por changelog y acordar su actualización al terminar el embarazo. RF-12/RF-22 requieren aceptación de esta fuente temporal.
 
 ## Registro y laboratorio
 
-El UUID del payload es estable en reintentos. El registro usa aislamiento READ_COMMITTED y bloquea la fila del paciente antes de comprobar duplicados; también bloquea el evento antes de persistir y evaluar cruces de umbral entre pacientes. Mismo UUID, paciente, autor y contenido devuelve `replayed: true`; discrepancias producen 409. Una huella SHA-256 del payload en la Obs de inicio permite comparar reintentos. Los llamadores internos deben preservar ese aislamiento; probar concurrencia en la versión MySQL/MariaDB de destino.
+El UUID del payload es estable en reintentos. El registro usa aislamiento READ_COMMITTED y bloquea la fila del paciente antes de comprobar duplicados; también bloquea el evento antes de persistir y evaluar cruces de umbral entre pacientes. Misma atención, UUID de solicitud, autor y contenido devuelve `replayed: true`; discrepancias producen 409. Una huella SHA-256 del payload en la Obs de inicio permite comparar reintentos. Los llamadores internos deben preservar ese aislamiento; probar concurrencia en la versión MySQL/MariaDB de destino.
 
 La ventana de posibles duplicados es simétrica e inclusiva respecto al inicio, para el paciente y diagnóstico de la enfermedad. No hay override. Fecha válida entre nacimiento y atención, sin superar hoy ni defunción registrada. Atención/visita deben pertenecer al paciente y no estar anuladas; proveedor asociado al usuario autenticado.
 

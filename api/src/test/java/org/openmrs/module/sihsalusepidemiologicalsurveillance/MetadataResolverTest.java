@@ -5,7 +5,6 @@ import static org.mockito.Mockito.*;
 
 import java.util.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.openmrs.*;
 import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.*;
@@ -30,7 +29,8 @@ public class MetadataResolverTest {
 			Concept question = f.clinical.concept(f.m.questions.get(key));
 			ConceptDatatype datatype = new ConceptDatatype();
 			datatype.setName(Arrays.asList("event", "status", "severity", "origin", "species").contains(key) ? "Coded"
-			        : "onset".equals(key) ? "Date" : "pregnancy".equals(key) ? "Boolean" : "Text");
+			        : "onset".equals(key) ? "Date"
+			                : Arrays.asList("pregnancy", "ethnicity").contains(key) ? "Coded" : "Text");
 			question.setDatatype(datatype);
 		}
 		answers(f, "status", f.m.statuses);
@@ -47,9 +47,7 @@ public class MetadataResolverTest {
 			f.clinical.concept(f.m.questions.get(key)).addAnswer(new ConceptAnswer(f.clinical.concept(choice.conceptUuid)));
 	}
 	
-	private MetadataResolver resolver(SyntheticFixture f) throws Exception {
-		when(f.clinical.property(SurveillanceConstants.MODULE_ID + ".metadata"))
-		        .thenReturn(new ObjectMapper().writeValueAsString(f.m));
+	private MetadataResolver resolver(SyntheticFixture f) {
 		MetadataResolver resolver = new MetadataResolver();
 		resolver.setClinical(f.clinical);
 		resolver.setDao(f.dao);
@@ -57,58 +55,57 @@ public class MetadataResolverTest {
 	}
 	
 	@Test
-	public void validatesExistingQuestionsAnswersAndMappings() throws Exception {
+	public void validatesExistingQuestionsAnswersAndMappings() {
 		SyntheticFixture f = configured();
-		assertEquals(f.m.questions, resolver(f).get().questions);
+		resolver(f).validate(f.m);
 	}
 	
 	@Test
-	public void refusesUnconfiguredClinicalOperations() throws Exception {
-		SyntheticFixture f = configured();
-		MetadataResolver resolver = resolver(f);
-		when(f.clinical.property(anyString())).thenReturn("");
-		rejected(resolver);
+	public void usesFixedCatalogueWithoutGlobalProperty() {
+		Metadata m = SurveillanceCatalog.create();
+		assertEquals("ff7327ce-f06e-4a2e-ba2a-8ef0cf7b89d7", m.encounterTypeUuid);
+		assertEquals(2, m.diseases.size());
+		assertEquals("db38b18a-6bce-423b-a776-61623584952c", m.diseases.get(0).diagnoses.get(0).diagnosisConceptUuid);
 	}
 	
 	@Test
-	public void refusesWrongQuestionDatatype() throws Exception {
+	public void refusesWrongQuestionDatatype() {
 		SyntheticFixture f = configured();
 		f.clinical.concept(f.m.questions.get("onset")).getDatatype().setName("Text");
-		rejected(resolver(f));
+		rejected(resolver(f), f.m);
 	}
 	
 	@Test
-	public void refusesAnswerOutsideExistingQuestion() throws Exception {
+	public void refusesAnswerOutsideExistingQuestion() {
 		SyntheticFixture f = configured();
 		f.clinical.concept(f.m.questions.get("status")).setAnswers(new HashSet<ConceptAnswer>());
-		rejected(resolver(f));
+		rejected(resolver(f), f.m);
 	}
 	
 	@Test
-	public void refusesUnverifiedPregnancyAttribute() throws Exception {
+	public void refusesUnverifiedPregnancyAttribute() {
 		SyntheticFixture f = configured();
 		f.m.pregnancyAttributeTypeUuid = SyntheticFixture.uuid(200);
 		PersonAttributeType type = new PersonAttributeType();
 		type.setFormat("java.lang.String");
 		when(f.clinical.attributeType(f.m.pregnancyAttributeTypeUuid)).thenReturn(type);
-		rejected(resolver(f));
+		rejected(resolver(f), f.m);
 	}
 	
 	@Test
-	public void refusesSilentReplicaFallback() throws Exception {
+	public void refusesSilentReplicaFallback() {
 		SyntheticFixture f = configured();
 		f.m.analyticsDatasource = "replica";
-		rejected(resolver(f));
+		rejected(resolver(f), f.m);
 	}
 	
-	private void rejected(MetadataResolver resolver) {
+	private void rejected(MetadataResolver resolver, Metadata metadata) {
 		try {
-			resolver.get();
+			resolver.validate(metadata);
 			fail("Expected metadata rejection");
 		}
-		catch (SurveillanceException expected) {
-			assertEquals(503, expected.getStatus());
-			assertEquals("METADATA_NOT_CONFIGURED", expected.getCode());
+		catch (IllegalArgumentException expected) {
+			assertNotNull(expected);
 		}
 	}
 }
