@@ -23,10 +23,42 @@ public class SurveillanceController {
 		return service == null ? Context.getService(SurveillanceService.class) : service;
 	}
 	
-	@RequestMapping(value = "/metadata", method = RequestMethod.GET)
+	@RequestMapping(value = "/catalog", method = RequestMethod.GET)
 	@ResponseBody
-	public Map<String, Object> metadata() {
-		return service().getMetadata();
+	public Map<String, Object> catalog() {
+		return service().getCatalog();
+	}
+	
+	@RequestMapping(value = "/healthcheck", method = RequestMethod.GET)
+	@ResponseBody
+	public Map<String, Object> healthcheck() {
+		return service().healthcheck();
+	}
+	
+	@RequestMapping(value = "/events", method = RequestMethod.GET)
+	@ResponseBody
+	public Map<String, Object> events(
+	        @RequestParam(value = "includeRetired", defaultValue = "false") boolean includeRetired) {
+		return Collections.<String, Object> singletonMap("results", service().getEvents(includeRetired));
+	}
+	
+	@RequestMapping(value = "/events/{uuid}", method = RequestMethod.GET)
+	@ResponseBody
+	public Map<String, Object> event(@PathVariable("uuid") String uuid) {
+		return service().getEvent(uuid);
+	}
+	
+	@RequestMapping(value = "/events/{uuid}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public Map<String, Object> updateEvent(@PathVariable("uuid") String uuid, @RequestBody Map<String, Object> body) {
+		return service().updateEvent(uuid, body);
+	}
+	
+	@RequestMapping(value = "/events/{uuid}", method = RequestMethod.DELETE)
+	@ResponseBody
+	public ResponseEntity<Void> deleteEvent(@PathVariable("uuid") String uuid) {
+		service().deleteEvent(uuid);
+		return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
 	}
 	
 	@RequestMapping(value = "/cases", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)

@@ -29,4 +29,5 @@
     <include file="liquibase-surveillance.xml"/>
     <include file="liquibase-scheduler.xml"/>
  
+    <include file="liquibase-english-entities.xml"/>
 </databaseChangeLog>

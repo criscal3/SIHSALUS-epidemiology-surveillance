@@ -14,13 +14,13 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.*;
 
 class SyntheticFixture {
 	
-	final Metadata m = new Metadata();
+	final ClinicalCatalog m = new ClinicalCatalog();
 	
 	final ClinicalData clinical = mock(ClinicalData.class);
 	
 	final SurveillanceDao dao = mock(SurveillanceDao.class);
 	
-	final MetadataResolver resolver = mock(MetadataResolver.class);
+	final ClinicalCatalogService resolver = mock(ClinicalCatalogService.class);
 	
 	final SurveillanceAccess access = mock(SurveillanceAccess.class);
 	
@@ -42,11 +42,11 @@ class SyntheticFixture {
 	
 	final EncounterRole role = new EncounterRole();
 	
-	final EventoNotificable event = new EventoNotificable();
+	final NotifiableEvent event = new NotifiableEvent();
 	
 	final Concept diagnosis = concept(6);
 	
-	final Metadata.Disease disease = new Metadata.Disease();
+	final ClinicalCatalog.Disease disease = new ClinicalCatalog.Disease();
 	
 	final CaseRequest request = new CaseRequest();
 	
@@ -88,7 +88,6 @@ class SyntheticFixture {
 		source.setLocation(location);
 		source.setEncounterDatetime(new EpidemiologicalCalendar(m).date(LocalDate.of(2026, 1, 20)));
 		type.setUuid(uuid(11));
-		m.encounterTypeUuid = type.getUuid();
 		source.setEncounterType(type);
 		role.setUuid(uuid(12));
 		m.encounterRoleUuid = role.getUuid();
@@ -105,9 +104,9 @@ class SyntheticFixture {
 		event.setId(1);
 		event.setUuid(uuid(14));
 		event.setConcept(concept(15));
-		event.setNombre("Synthetic event");
-		event.setPeriodicidad("semanal");
-		event.setPlazoDias(7);
+		event.setName("Synthetic event");
+		event.setPeriodicity("semanal");
+		event.setDeadlineDays(7);
 		disease.eventUuid = event.getUuid();
 		m.diseases.add(disease);
 		add(m.statuses, "SUSPECTED", 20);
@@ -117,7 +116,7 @@ class SyntheticFixture {
 		add(disease.severities, "MILD", 24);
 		add(disease.severities, "SEVERE", 25);
 		for (String severity : Arrays.asList("MILD", "SEVERE")) {
-			Metadata.DiagnosisMapping d = new Metadata.DiagnosisMapping();
+			ClinicalCatalog.DiagnosisMapping d = new ClinicalCatalog.DiagnosisMapping();
 			d.severity = severity;
 			d.diagnosisConceptUuid = diagnosis.getUuid();
 			d.icd10Code = "A90";
@@ -127,6 +126,10 @@ class SyntheticFixture {
 		for (String key : Arrays.asList("event", "status", "severity", "origin", "species", "onset", "pregnancy",
 		    "sourceEncounter", "laboratoryResult", "ethnicity")) {
 			Concept c = concept(question++);
+			ConceptDatatype datatype = new ConceptDatatype();
+			datatype.setName("onset".equals(key) ? "Date"
+			        : Arrays.asList("sourceEncounter", "laboratoryResult").contains(key) ? "Text" : "Coded");
+			c.setDatatype(datatype);
 			m.questions.put(key, c.getUuid());
 			when(clinical.concept(c.getUuid())).thenReturn(c);
 		}
@@ -143,18 +146,18 @@ class SyntheticFixture {
 			return e;
 		});
 		when(dao.events()).thenReturn(Arrays.asList(event));
-		when(dao.byUuid(EventoNotificable.class, event.getUuid())).thenReturn(event);
-		when(dao.rules(event)).thenReturn(Collections.<ReglaAlertaBrote> emptyList());
-		when(dao.counts(any(), anyString(), anyInt(), anyInt())).thenReturn(Collections.<ConteoCasosPeriodo> emptyList());
-		when(dao.encounters(anyString(), any(), any(), anyString())).thenReturn(new ArrayList<Encounter>());
-		when(dao.possibleDuplicates(anyString(), any(), anyList(), any(), any(), anyString()))
+		when(dao.byUuid(NotifiableEvent.class, event.getUuid())).thenReturn(event);
+		when(dao.rules(event)).thenReturn(Collections.<OutbreakAlertRule> emptyList());
+		when(dao.counts(any(), anyString(), anyInt(), anyInt())).thenReturn(Collections.<PeriodCaseCount> emptyList());
+		when(dao.encounters(any(), any(), anyString())).thenReturn(new ArrayList<Encounter>());
+		when(dao.possibleDuplicates(any(), anyList(), any(), any(), anyString()))
 		        .thenReturn(Collections.<Encounter> emptyList());
 		when(resolver.get()).thenReturn(m);
 		when(access.require(anyString())).thenReturn(actor);
 		validator.setClinical(clinical);
 		service.setClinical(clinical);
 		service.setDao(dao);
-		service.setMetadata(resolver);
+		service.setCatalog(resolver);
 		service.setAccess(access);
 		service.setValidator(validator);
 		request.uuid = uuid(90);
@@ -169,8 +172,8 @@ class SyntheticFixture {
 		request.onsetDate = "2026-01-19";
 	}
 	
-	private void add(List<Metadata.Choice> choices, String key, int id) {
-		Metadata.Choice c = new Metadata.Choice();
+	private void add(List<ClinicalCatalog.Choice> choices, String key, int id) {
+		ClinicalCatalog.Choice c = new ClinicalCatalog.Choice();
 		c.key = key;
 		c.conceptUuid = uuid(id);
 		c.label = key;
@@ -180,7 +183,7 @@ class SyntheticFixture {
 	
 	Obs lab(boolean positive) {
 		Concept test = concept(70), question = concept(71), answer = concept(positive ? 72 : 73);
-		Metadata.LabTest definition = new Metadata.LabTest();
+		ClinicalCatalog.LabTest definition = new ClinicalCatalog.LabTest();
 		definition.orderConceptUuid = test.getUuid();
 		definition.resultConceptUuid = question.getUuid();
 		definition.positiveAnswerUuids.add(uuid(72));

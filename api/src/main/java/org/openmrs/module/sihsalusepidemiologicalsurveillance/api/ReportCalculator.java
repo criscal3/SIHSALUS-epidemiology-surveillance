@@ -9,7 +9,7 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.*;
 public class ReportCalculator {
 	
 	public SurveillanceReport calculate(String eventUuid, LocalDate from, LocalDate to, String period,
-	        List<CaseRecord> cases, List<ConteoCasosPeriodo> history, Metadata m) {
+	        List<CaseRecord> cases, List<PeriodCaseCount> history, ClinicalCatalog m) {
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
 		EndemicChannel statistics = new EndemicChannel();
 		SurveillanceReport report = new SurveillanceReport();
@@ -75,27 +75,27 @@ public class ReportCalculator {
 		return report;
 	}
 	
-	private List<Integer> periodHistory(List<ConteoCasosPeriodo> counts, LocalDate date, String period, Metadata m) {
+	private List<Integer> periodHistory(List<PeriodCaseCount> counts, LocalDate date, String period, ClinicalCatalog m) {
 		if (!"dia".equals(period)) {
 			EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
 			return history(counts, calendar.year(date, period), calendar.number(date, period), m);
 		}
 		Map<Integer, Integer> years = new TreeMap<Integer, Integer>();
-		for (ConteoCasosPeriodo count : counts) {
-			if (count.getAnio() < date.getYear() && count.getAnio() >= date.getYear() - m.historicalYears
-			        && java.time.MonthDay.from(date).isValidYear(count.getAnio())
-			        && count.getNumeroPeriodo() == date.withYear(count.getAnio()).getDayOfYear()) {
-				years.put(count.getAnio(), count.getNumeroCasos());
+		for (PeriodCaseCount count : counts) {
+			if (count.getYear() < date.getYear() && count.getYear() >= date.getYear() - m.historicalYears
+			        && java.time.MonthDay.from(date).isValidYear(count.getYear())
+			        && count.getPeriodNumber() == date.withYear(count.getYear()).getDayOfYear()) {
+				years.put(count.getYear(), count.getCaseCount());
 			}
 		}
 		return new ArrayList<Integer>(years.values());
 	}
 	
-	public static List<Integer> history(List<ConteoCasosPeriodo> values, int year, int number, Metadata m) {
+	public static List<Integer> history(List<PeriodCaseCount> values, int year, int number, ClinicalCatalog m) {
 		Map<Integer, Integer> samples = new TreeMap<Integer, Integer>();
-		for (ConteoCasosPeriodo count : values)
-			if (count.getAnio() < year && count.getAnio() >= year - m.historicalYears && count.getNumeroPeriodo() == number)
-				samples.put(count.getAnio(), count.getNumeroCasos());
+		for (PeriodCaseCount count : values)
+			if (count.getYear() < year && count.getYear() >= year - m.historicalYears && count.getPeriodNumber() == number)
+				samples.put(count.getYear(), count.getCaseCount());
 		return new ArrayList<Integer>(samples.values());
 	}
 	
@@ -111,34 +111,34 @@ public class ReportCalculator {
 		values.put(key, values.getOrDefault(key, 0) + 1);
 	}
 	
-	public List<ConteoCasosPeriodo> aggregate(EventoNotificable event, List<CaseRecord> records, Metadata m,
+	public List<PeriodCaseCount> aggregate(NotifiableEvent event, List<CaseRecord> records, ClinicalCatalog m,
 	        LocalDate today) {
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
 		// Start of verified coverage, never before it; absence of records before coverage is unknown.
 		LocalDate start = LocalDate.parse(m.surveillanceStartDate);
-		List<ConteoCasosPeriodo> result = new ArrayList<ConteoCasosPeriodo>();
+		List<PeriodCaseCount> result = new ArrayList<PeriodCaseCount>();
 		for (String period : Arrays.asList("dia", "semana", "mes", "trimestre", "semestre")) {
-			Map<String, ConteoCasosPeriodo> buckets = new LinkedHashMap<String, ConteoCasosPeriodo>();
+			Map<String, PeriodCaseCount> buckets = new LinkedHashMap<String, PeriodCaseCount>();
 			for (LocalDate date = calendar.start(start, period); !date.isAfter(today); date = calendar.next(date, period)) {
 				// A partially covered first period must not become a historical zero.
 				if (date.isBefore(start))
 					continue;
-				ConteoCasosPeriodo count = new ConteoCasosPeriodo();
-				count.setEvento(event);
-				count.setTipoPeriodo(period);
-				count.setAnio(calendar.year(date, period));
-				count.setNumeroPeriodo(calendar.number(date, period));
-				count.setNumeroCasos(0);
-				count.setFecha("dia".equals(period) ? calendar.date(date) : null);
-				buckets.put(count.getAnio() + ":" + count.getNumeroPeriodo(), count);
+				PeriodCaseCount count = new PeriodCaseCount();
+				count.setEvent(event);
+				count.setPeriodType(period);
+				count.setYear(calendar.year(date, period));
+				count.setPeriodNumber(calendar.number(date, period));
+				count.setCaseCount(0);
+				count.setDate("dia".equals(period) ? calendar.date(date) : null);
+				buckets.put(count.getYear() + ":" + count.getPeriodNumber(), count);
 			}
 			for (CaseRecord record : records)
 				if (event.getUuid().equals(record.eventUuid) && "CONFIRMED".equals(record.status) && record.onset != null
 				        && !record.onset.isBefore(start) && !record.onset.isAfter(today)) {
-					ConteoCasosPeriodo count = buckets
+					PeriodCaseCount count = buckets
 					        .get(calendar.year(record.onset, period) + ":" + calendar.number(record.onset, period));
 					if (count != null)
-						count.setNumeroCasos(count.getNumeroCasos() + 1);
+						count.setCaseCount(count.getCaseCount() + 1);
 				}
 			result.addAll(buckets.values());
 		}

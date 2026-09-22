@@ -19,24 +19,24 @@ public class CaseObservations {
 		return found;
 	}
 	
-	public static String text(Encounter encounter, Metadata m, String key) {
+	public static String text(Encounter encounter, ClinicalCatalog m, String key) {
 		Obs obs = find(encounter, m.questions.get(key));
 		return obs == null ? null : obs.getValueText();
 	}
 	
-	public static String coded(Encounter encounter, Metadata m, String key) {
+	public static String coded(Encounter encounter, ClinicalCatalog m, String key) {
 		Obs obs = find(encounter, m.questions.get(key));
 		return obs == null || obs.getValueCoded() == null ? null : obs.getValueCoded().getUuid();
 	}
 	
-	public static String choiceKey(List<Metadata.Choice> choices, String uuid) {
-		for (Metadata.Choice choice : choices)
+	public static String choiceKey(List<ClinicalCatalog.Choice> choices, String uuid) {
+		for (ClinicalCatalog.Choice choice : choices)
 			if (Objects.equals(choice.conceptUuid, uuid))
 				return choice.key;
 		return null;
 	}
 	
-	public CaseRecord read(Encounter e, Metadata m, Map<String, String> eventConcepts) {
+	public CaseRecord read(Encounter e, ClinicalCatalog m, Map<String, String> eventConcepts) {
 		CaseRecord result = new CaseRecord();
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
 		result.encounterUuid = e.getUuid();
@@ -45,7 +45,8 @@ public class CaseObservations {
 		result.status = choiceKey(m.statuses, coded(e, m, "status"));
 		result.origin = choiceKey(m.origins, coded(e, m, "origin"));
 		if (result.eventUuid != null) {
-			result.severity = choiceKey(MetadataResolver.disease(m, result.eventUuid).severities, coded(e, m, "severity"));
+			result.severity = choiceKey(ClinicalCatalogService.disease(m, result.eventUuid).severities,
+			    coded(e, m, "severity"));
 		}
 		Obs onset = find(e, m.questions.get("onset"));
 		if (onset != null && onset.getValueDatetime() != null)
@@ -60,7 +61,7 @@ public class CaseObservations {
 		return result;
 	}
 	
-	public static Boolean booleanValue(Obs observation, Metadata m) {
+	public static Boolean booleanValue(Obs observation, ClinicalCatalog m) {
 		if (observation == null || observation.getValueCoded() == null)
 			return null;
 		String uuid = observation.getValueCoded().getUuid();

@@ -38,11 +38,21 @@ public class CaseValidatorTest {
 	}
 	
 	@Test
-	public void positiveResultMustHaveTestOrder() {
+	public void positiveResultDoesNotRequireTestOrder() {
 		SyntheticFixture f = new SyntheticFixture();
 		f.request.status = "CONFIRMED";
-		f.lab(true).setOrder(new Order());
-		fails(f, "INVALID_LAB_RESULT");
+		f.lab(true).setOrder(null);
+		assertNotNull(f.validator.validate(f.request, f.m, f.actor).laboratory);
+	}
+	
+	@Test
+	public void rejectsIndeterminateLaboratoryResult() {
+		SyntheticFixture f = new SyntheticFixture();
+		f.request.status = "CONFIRMED";
+		Concept indeterminate = new Concept(9999);
+		indeterminate.setUuid("indeterminate-uuid");
+		f.lab(true).setValueCoded(indeterminate);
+		fails(f, "LAB_STATUS_CONFLICT");
 	}
 	
 	@Test
@@ -74,6 +84,15 @@ public class CaseValidatorTest {
 		SyntheticFixture f = new SyntheticFixture();
 		f.source.setPatient(new Patient(99));
 		fails(f, "INVALID_SOURCE_ENCOUNTER");
+	}
+	
+	@Test
+	public void acceptsAnActiveSourceEncounterOfAnotherType() {
+		SyntheticFixture f = new SyntheticFixture();
+		EncounterType otherType = new EncounterType();
+		otherType.setUuid(SyntheticFixture.uuid(90));
+		f.source.setEncounterType(otherType);
+		assertSame(f.source, f.validator.validate(f.request, f.m, f.actor).source);
 	}
 	
 	@Test

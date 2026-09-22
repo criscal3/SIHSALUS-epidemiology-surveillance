@@ -23,19 +23,19 @@ Son 16 de 28 RF previstos; esto indica **alcance implementado, no aceptación cl
 
 - `api/`: entidades Hibernate, DAO, servicio transaccional, validadores, cálculos y scheduler.
 - `omod/`: descriptor y controlador Spring MVC siguiendo la referencia imaging; publica `/openmrs/ws/rest/v1/sihsalusepidemiologicalsurveillance`.
-- El registro **completa la atención existente «Atención de Enfermedades Metaxénicas»** (`ff7327ce-f06e-4a2e-ba2a-8ef0cf7b89d7`): agrega Obs nativas y un Diagnosis solo si falta. Conserva UUID, fecha, visita, localidad, profesional y datos previos de esa atención. La referencia textual al resultado conserva el TestOrder.
+- El registro completa una **atención existente de cualquier tipo**, ligada a la visita del paciente: agrega Obs nativas y un Diagnosis solo si falta. Conserva UUID, fecha, visita, localidad, profesional y datos previos de esa atención. La referencia textual al resultado conserva el TestOrder.
 - El `uuid` de la solicitud identifica el intento idempotente; el `uuid` de la respuesta identifica la atención ya existente. La huella del intento queda en la Obs de inicio de síntomas.
 - Un descartado conserva su clasificación en Obs y no genera un diagnóstico nuevo; tampoco anula diagnósticos previos de la atención. Los reportes solo cuentan confirmados. Esta convención requiere aceptación clínica.
-- Las seis tablas nuevas son `evento_notificable`, `regla_alerta_brote`, `conteo_casos_periodo`, `foco_epidemiologico`, `auditoria_vigilancia` y `notificacion_noti`. UUID únicos y claves foráneas reales; conteo único por evento/periodo/año/número.
-- Se conserva el changeset original del scaffold por compatibilidad; su tabla no se utiliza. Changesets nuevos incrementales 1–7; sin borrado de auditoría.
+- Entidades: `NotifiableEvent`, `OutbreakAlertRule`, `PeriodCaseCount`, `EpidemiologicalFocus`, `SurveillanceAudit` y `NotiNotification`. Tablas: `surveillance_notifiable_event`, `surveillance_outbreak_alert_rule`, `surveillance_period_case_count`, `surveillance_epidemiological_focus`, `surveillance_audit` y `surveillance_noti_notification`.
+- Se conservan los changesets ya aplicados. Las migraciones incrementales agregan `retired` y renombran tablas/columnas al inglés conservando registros, UUID y relaciones. La tabla original del scaffold no se utiliza.
 - Todo acceso usa la **base original**. Solo se admite `analyticsDatasource: "primary"`; `"replica"` se rechaza. El datasource de réplica requiere implementación y pruebas posteriores.
 
 ## Preparación del contenido
 
-No se usa un archivo JSON ni una global property de metadatos en ejecución. `docs/vigilancia.json` sirvió para contrastar los valores con `sihsalus-content`; sus identificadores numéricos OCL de diagnósticos fueron sustituidos por los `external_id` UUID de OpenMRS y códigos CIE-10 publicados en ese contenido. El catálogo Java es la fuente de ejecución.
+Los UUID están fijados en `SurveillanceCatalog.java`, contrastados con los `external_id` de OpenMRS y códigos CIE-10 publicados en `sihsalus-content`. No se carga ningún archivo de configuración clínica ni global property. La apertura del catálogo no depende de validar todos los conceptos; cada operación comprueba las referencias que utiliza.
 
-1. Cargar el contenido de `sihsalus-content` y comprobar en la instancia los conceptos, respuestas, tipo de atención, rol y atributo Etnia. Los UUID de diagnósticos vienen de `external_id` en el export OCL; la columna `uuid` de ese export es un identificador OCL numérico.
-2. Instalar el OMOD. El changeset 7 crea los eventos administrativos de dengue y malaria solo si los conceptos respectivos existen; nunca supone un `concept_id` local. `GET /metadata` falla con 503 si faltan eventos o referencias requeridas.
+1. Cargar el contenido de `sihsalus-content` y comprobar en la instancia los conceptos, respuestas, rol y atributo Etnia. Los UUID de diagnósticos vienen de `external_id` en el export OCL; la columna `uuid` de ese export es un identificador OCL numérico.
+2. Instalar el OMOD actualizado y actualizar también el ESM. La migración inicial crea los eventos administrativos de dengue y malaria si existen sus conceptos. `GET /catalog` devuelve el catálogo fijo y los eventos activos disponibles. Si faltan eventos, crearlos mediante `POST /events` usando los UUID del catálogo Java.
 3. Comprobar que los códigos de diagnóstico y la atención existente correspondan al contenido cargado. El servidor valida preguntas, respuestas y referencias antes del registro.
 4. Crear reglas mediante `POST /rules`. Poblar focos revisados por epidemiología; no hay clasificación automática ni pantalla administrativa de focos todavía.
 5. Establecer fecha inicial de **cobertura completa y verificada**, calendario, ventana de duplicados y años históricos. No declarar cobertura antigua para fabricar ceros.
@@ -72,7 +72,7 @@ Confirmados/descartados exigen resultado codificado coherente, no anulado, del m
 
 ### Scheduler
 
-Changeset 7: **SIH Salus surveillance counts**, `RefreshCountsTask`, cada 3600 segundos, inicio al arrancar OpenMRS. Tras instalación en caliente, iniciar desde la administración del scheduler o reiniciar después de configurar metadatos. Usa el daemon nativo y el servicio transaccional; `POST /counts/refresh` permite ejecución manual autorizada.
+Changeset 7: **SIH Salus surveillance counts**, `RefreshCountsTask`, cada 3600 segundos, inicio al arrancar OpenMRS. En el servidor de desarrollo afectado, instalar con reinicio completo según la sección siguiente; después de cargar el contenido clínico, comprobar la tarea en la administración del scheduler. Usa el daemon nativo y el servicio transaccional; `POST /counts/refresh` permite ejecución manual autorizada. Se conserva intacto el changelog histórico para no invalidar instalaciones anteriores; una migración posterior actualiza su descripción.
 
 Reconstrucción atómica de las cinco periodicidades, con bloqueo por evento y sin borrar datos clínicos. Correcciones/anulaciones requieren recálculo. La fecha de generación del reporte no garantiza la frescura del último refresco histórico. Dimensionar duración e índices con el volumen real.
 
@@ -91,6 +91,14 @@ Reconstrucción atómica de las cinco periodicidades, con bloqueo por evento y s
 Cadenas sin tilde; no se asignan automáticamente a roles. Los servicios nativos y FHIR exigen además sus propios privilegios de lectura/escritura clínica. No se añaden privilegios proxy.
 
 Auditoría básica de operaciones exitosas: usuario, fecha, acción, entidad e ID. No guarda payload clínico ni implementa aún diffs, accesos denegados o retención de 20 años. Errores REST seguros, sin excepciones nativas. Los agregados también requieren autorización.
+
+## Instalación en el servidor de desarrollo
+
+En el incidente observado con OpenMRS 2.8.9, la carga del OMOD sin reiniciar deja operaciones de generación de identificadores (`idgen`) fallando con `EntityManagerFactory is closed`; el problema no se reproduce tras un reinicio completo, según la comprobación del operador. La traza muestra el uso de una fábrica Hibernate cerrada, pero no identifica quién conserva la referencia ni demuestra que este módulo reescriba la conexión de base de datos.
+
+Como mitigación para ese entorno, detener Tomcat/OpenMRS, sustituir el OMOD en el directorio de módulos configurado y arrancar de nuevo el servidor. Verificar en el registro que el contexto terminó de inicializarse y comprobar tanto la generación de identificadores como los endpoints de vigilancia. Reiniciar únicamente el módulo desde la interfaz no equivale a reiniciar Tomcat.
+
+Esto no constituye una corrección de la recarga en caliente. Para diagnosticarla se necesita el registro completo desde la carga del módulo hasta el primer error de inicialización, junto con las versiones de los módulos instalados, especialmente `idgen`. El error del navegador sobre el índice único `pattern` del service worker es distinto y no demuestra por sí mismo un fallo de conexión Hibernate.
 
 ## Desarrollo y validación
 

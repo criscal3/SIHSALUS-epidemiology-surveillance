@@ -33,28 +33,41 @@ public class LiquibaseMigrationTest {
 			Database database = DatabaseFactory.getInstance()
 			        .findCorrectDatabaseImplementation(new JdbcConnection(connection));
 			Liquibase liquibase = new Liquibase("liquibase.xml", new ClassLoaderResourceAccessor(), database);
+			liquibase.update(8, "");
+			try (Statement sql = connection.createStatement()) {
+				sql.execute("update evento_notificable set nombre='Previously deployed event' where concept_id=3");
+				connection.commit();
+			}
 			liquibase.update("");
 			liquibase.update("");
 			try (Statement sql = connection.createStatement()) {
-				ResultSet tasks = sql.executeQuery("select count(*) from scheduler_task_config where start_on_startup=true");
+				ResultSet preserved = sql
+				        .executeQuery("select name, retired from surveillance_notifiable_event where concept_id=3");
+				assertTrue(preserved.next());
+				assertEquals("Previously deployed event", preserved.getString(1));
+				assertFalse(preserved.getBoolean(2));
+				preserved.close();
+				ResultSet tasks = sql
+				        .executeQuery("select count(*) from scheduler_task_config where start_on_startup=false");
 				tasks.next();
 				assertEquals(1, tasks.getInt(1));
 				tasks.close();
-				ResultSet tables = connection.getMetaData().getTables(null, null, "EVENTO_NOTIFICABLE", null);
+				ResultSet tables = connection.getMetaData().getTables(null, null, "SURVEILLANCE_NOTIFIABLE_EVENT", null);
 				assertTrue(tables.next());
-				ResultSet seeded = sql.executeQuery("select count(*) from evento_notificable where concept_id in (3,4)");
+				ResultSet seeded = sql
+				        .executeQuery("select count(*) from surveillance_notifiable_event where concept_id in (3,4)");
 				seeded.next();
 				assertEquals(2, seeded.getInt(1));
 				seeded.close();
 				sql.execute(
-				    "insert into evento_notificable(evento_notificable_id,uuid,concept_id,nombre,periodicidad,plazo_dias) values(10,'event',1,'Synthetic','semanal',7)");
+				    "insert into surveillance_notifiable_event(event_id,uuid,concept_id,name,periodicity,deadline_days) values(10,'event',1,'Synthetic','semanal',7)");
 				fails(sql,
-				    "insert into regla_alerta_brote(uuid,evento_notificable_id,tipo_condicion,activa) values('orphan',99,'EPIDEMIC',true)");
+				    "insert into surveillance_outbreak_alert_rule(uuid,event_id,condition_type,active) values('orphan',99,'EPIDEMIC',true)");
 				sql.execute(
-				    "insert into conteo_casos_periodo(uuid,evento_notificable_id,tipo_periodo,anio,numero_periodo,numero_casos) values('count',10,'semana',2026,1,2)");
+				    "insert into surveillance_period_case_count(uuid,event_id,period_type,calendar_year,period_number,case_count) values('count',10,'semana',2026,1,2)");
 				fails(sql,
-				    "insert into conteo_casos_periodo(uuid,evento_notificable_id,tipo_periodo,anio,numero_periodo,numero_casos) values('duplicate',10,'semana',2026,1,3)");
-				fails(sql, "delete from evento_notificable where evento_notificable_id=10");
+				    "insert into surveillance_period_case_count(uuid,event_id,period_type,calendar_year,period_number,case_count) values('duplicate',10,'semana',2026,1,3)");
+				fails(sql, "delete from surveillance_notifiable_event where event_id=10");
 			}
 		}
 	}

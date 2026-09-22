@@ -8,18 +8,18 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.*;
 
 public class OutbreakEngine {
 	
-	public void evaluate(CaseRecord current, FocoEpidemiologico focus, List<ReglaAlertaBrote> rules, List<CaseRecord> recent,
-	        List<ConteoCasosPeriodo> history, Metadata m, CaseResult result) {
+	public void evaluate(CaseRecord current, EpidemiologicalFocus focus, List<OutbreakAlertRule> rules,
+	        List<CaseRecord> recent, List<PeriodCaseCount> history, ClinicalCatalog m, CaseResult result) {
 		if ("DISCARDED".equals(current.status))
 			return;
-		boolean eliminated = focus != null && "eliminado".equals(focus.getClasificacion());
+		boolean eliminated = focus != null && "eliminado".equals(focus.getClassification());
 		if ("SEVERE".equals(current.severity))
 			result.immediateAlerts.add("SEVERE_CASE");
 		if (current.deceased)
 			result.immediateAlerts.add("DEATH");
 		if (eliminated)
 			result.immediateAlerts.add("ELIMINATED_FOCUS");
-		if (focus != null && Boolean.FALSE.equals(focus.getReceptivo()))
+		if (focus != null && Boolean.FALSE.equals(focus.getReceptive()))
 			result.immediateAlerts.add("NON_RECEPTIVE_FOCUS");
 		if (Boolean.TRUE.equals(current.pregnant) && "CONFIRMED".equals(current.status))
 			result.immediateAlerts.add("CONFIRMED_PREGNANCY");
@@ -32,13 +32,13 @@ public class OutbreakEngine {
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
 		LocalDate week = calendar.start(current.onset, "semana");
 		EndemicChannel channel = new EndemicChannel();
-		for (ReglaAlertaBrote rule : rules) {
-			if (!Boolean.TRUE.equals(rule.getActiva()))
+		for (OutbreakAlertRule rule : rules) {
+			if (!Boolean.TRUE.equals(rule.getActive()))
 				continue;
-			if ("ELIMINATED_FOCUS".equals(rule.getTipoCondicion())) {
+			if ("ELIMINATED_FOCUS".equals(rule.getConditionType())) {
 				if (eliminated && "AUTOCHTHONOUS".equals(current.origin))
 					result.outbreakAlerts.add("AUTOCHTHONOUS_ELIMINATED");
-			} else if ("EPIDEMIC".equals(rule.getTipoCondicion())) {
+			} else if ("EPIDEMIC".equals(rule.getConditionType())) {
 				List<Integer> sample = ReportCalculator.history(history, calendar.year(week, "semana"),
 				    calendar.number(week, "semana"), m);
 				int count = count(recent, current.eventUuid, week, week.plusWeeks(1));
@@ -47,8 +47,8 @@ public class OutbreakEngine {
 					warnHistory(result);
 				else if (count > thresholds.q3 && count - 1 <= thresholds.q3)
 					result.outbreakAlerts.add("EPIDEMIC_THRESHOLD");
-			} else if ("SUSTAINED".equals(rule.getTipoCondicion())) {
-				int window = rule.getVentanaSemanas() == null ? 2 : rule.getVentanaSemanas();
+			} else if ("SUSTAINED".equals(rule.getConditionType())) {
+				int window = rule.getWindowWeeks() == null ? 2 : rule.getWindowWeeks();
 				if (window < 2 || window > 12)
 					throw new SurveillanceException(503, "INVALID_OUTBREAK_RULE");
 				boolean sustained = true;

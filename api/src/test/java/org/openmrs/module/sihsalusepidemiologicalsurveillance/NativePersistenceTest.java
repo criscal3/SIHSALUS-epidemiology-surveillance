@@ -7,7 +7,7 @@ import java.util.*;
 import org.junit.Test;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.db.SurveillanceDao;
-import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.EventoNotificable;
+import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.NotifiableEvent;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -19,21 +19,20 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 	
 	@Test
 	public void persistsAndReadsAnEventThroughTheRegisteredHibernateMapping() {
-		EventoNotificable event = new EventoNotificable();
+		NotifiableEvent event = new NotifiableEvent();
 		event.setConcept(Context.getConceptService().getConcept(3));
-		event.setNombre("Synthetic surveillance");
-		event.setPeriodicidad("semanal");
-		event.setPlazoDias(7);
+		event.setName("Synthetic surveillance");
+		event.setPeriodicity("semanal");
+		event.setDeadlineDays(7);
 		dao.save(event);
 		assertNotNull(event.getId());
-		assertEquals(event.getUuid(), dao.byUuid(EventoNotificable.class, event.getUuid()).getUuid());
+		assertEquals(event.getUuid(), dao.byUuid(NotifiableEvent.class, event.getUuid()).getUuid());
 	}
 	
 	@Test
 	public void nativeClinicalQueriesCompileAgainstCoreMappings() {
-		assertTrue(dao.encounters("00000000-0000-4000-8000-000000000001", new Date(0), new Date(),
-		    "00000000-0000-4000-8000-000000000002").isEmpty());
-		assertTrue(dao.possibleDuplicates("00000000-0000-4000-8000-000000000001", Context.getPatientService().getPatient(2),
+		assertTrue(dao.encounters(new Date(0), new Date(), "00000000-0000-4000-8000-000000000002").isEmpty());
+		assertTrue(dao.possibleDuplicates(Context.getPatientService().getPatient(2),
 		    Arrays.asList("00000000-0000-4000-8000-000000000003"), new Date(0), new Date(),
 		    "00000000-0000-4000-8000-000000000002").isEmpty());
 	}
@@ -68,11 +67,11 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 			org.openmrs.Concept concept = nativeConcept("Synthetic " + key, datatype);
 			f.m.questions.put(key, concept.getUuid());
 		}
-		for (org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.Metadata.Choice choice : f.m.statuses)
+		for (org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.ClinicalCatalog.Choice choice : f.m.statuses)
 			choice.conceptUuid = nativeConcept("Synthetic status " + choice.key, "N/A").getUuid();
-		for (org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.Metadata.Choice choice : f.m.origins)
+		for (org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.ClinicalCatalog.Choice choice : f.m.origins)
 			choice.conceptUuid = nativeConcept("Synthetic origin " + choice.key, "N/A").getUuid();
-		for (org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.Metadata.Choice choice : f.disease.severities)
+		for (org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.ClinicalCatalog.Choice choice : f.disease.severities)
 			choice.conceptUuid = nativeConcept("Synthetic severity " + choice.key, "N/A").getUuid();
 		org.openmrs.ConceptSource codingSource = new org.openmrs.ConceptSource();
 		codingSource.setName("Synthetic ICD-10");
@@ -89,13 +88,13 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 		mapping.setConceptMapType(Context.getConceptService().getConceptMapType(1));
 		diagnosis.addConceptMapping(mapping);
 		Context.getConceptService().saveConcept(diagnosis);
-		for (org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.Metadata.DiagnosisMapping d : f.disease.diagnoses)
+		for (org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.ClinicalCatalog.DiagnosisMapping d : f.disease.diagnoses)
 			d.diagnosisConceptUuid = diagnosis.getUuid();
-		EventoNotificable event = new EventoNotificable();
+		NotifiableEvent event = new NotifiableEvent();
 		event.setConcept(nativeConcept("Synthetic disease event", "N/A"));
-		event.setNombre("Synthetic event");
-		event.setPeriodicidad("semanal");
-		event.setPlazoDias(7);
+		event.setName("Synthetic event");
+		event.setPeriodicity("semanal");
+		event.setDeadlineDays(7);
 		dao.save(event);
 		f.disease.eventUuid = event.getUuid();
 		f.request.eventUuid = event.getUuid();
@@ -104,7 +103,6 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 		f.request.providerUuid = provider.getUuid();
 		f.request.locationUuid = location.getUuid();
 		f.m.encounterRoleUuid = role.getUuid();
-		f.m.encounterTypeUuid = type.getUuid();
 		f.request.onsetDate = new org.openmrs.module.sihsalusepidemiologicalsurveillance.api.EpidemiologicalCalendar(f.m)
 		        .local(careDate).toString();
 		org.mockito.Mockito.when(f.access.require(org.mockito.Mockito.anyString())).thenReturn(actor);
@@ -131,8 +129,7 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 		assertEquals("A90", result.icd10);
 		assertEquals(visit.getUuid(), persisted.getVisit().getUuid());
 		assertEquals(1,
-		    dao.encounters(type.getUuid(), new Date(careDate.getTime() - 86400000L), new Date(), f.m.questions.get("onset"))
-		            .size());
+		    dao.encounters(new Date(careDate.getTime() - 86400000L), new Date(), f.m.questions.get("onset")).size());
 	}
 	
 	private org.openmrs.Concept nativeConcept(String name, String datatype) {

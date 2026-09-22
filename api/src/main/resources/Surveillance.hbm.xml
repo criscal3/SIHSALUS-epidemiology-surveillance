@@ -1,64 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 <hibernate-mapping package="org.openmrs.module.sihsalusepidemiologicalsurveillance.model" auto-import="true">
-  <class name="EventoNotificable" table="evento_notificable">
-    <id name="id" column="evento_notificable_id" type="int"><generator class="native"/></id>
+  <class name="NotifiableEvent" table="surveillance_notifiable_event">
+    <id name="id" column="event_id" type="int"><generator class="native"/></id>
+    <property name="retired" column="retired" type="boolean" not-null="true"/>
     <property name="uuid" column="uuid" type="string" not-null="true" unique="true" length="38"/>
     <many-to-one name="concept" column="concept_id" class="org.openmrs.Concept" not-null="true"/>
-    <property name="nombre" column="nombre" type="string" not-null="true"/>
-    <property name="periodicidad" column="periodicidad" type="string" not-null="true"/>
-    <property name="plazoDias" column="plazo_dias" type="integer" not-null="true"/>
+    <property name="name" column="name" type="string" not-null="true"/>
+    <property name="periodicity" column="periodicity" type="string" not-null="true"/>
+    <property name="deadlineDays" column="deadline_days" type="integer" not-null="true"/>
   </class>
-  <class name="ReglaAlertaBrote" table="regla_alerta_brote">
-    <id name="id" column="regla_id" type="int"><generator class="native"/></id>
+  <class name="OutbreakAlertRule" table="surveillance_outbreak_alert_rule">
+    <id name="id" column="rule_id" type="int"><generator class="native"/></id>
     <property name="uuid" column="uuid" type="string" not-null="true" unique="true" length="38"/>
-    <many-to-one name="evento" column="evento_notificable_id" class="org.openmrs.module.sihsalusepidemiologicalsurveillance.model.EventoNotificable" not-null="true"/>
-    <property name="tipoCondicion" column="tipo_condicion" type="string" not-null="true"/>
-    <property name="ventanaSemanas" column="ventana_semanas" type="integer" not-null="false"/>
-    <property name="valorUmbral" column="valor_umbral" type="double" not-null="false"/>
-    <property name="activa" column="activa" type="boolean" not-null="true"/>
+    <many-to-one name="event" column="event_id" class="org.openmrs.module.sihsalusepidemiologicalsurveillance.model.NotifiableEvent" not-null="true"/>
+    <property name="conditionType" column="condition_type" type="string" not-null="true"/>
+    <property name="windowWeeks" column="window_weeks" type="integer" not-null="false"/>
+    <property name="threshold" column="threshold" type="double" not-null="false"/>
+    <property name="active" column="active" type="boolean" not-null="true"/>
   </class>
-  <class name="ConteoCasosPeriodo" table="conteo_casos_periodo">
-    <id name="id" column="conteo_id" type="int"><generator class="native"/></id>
+  <class name="PeriodCaseCount" table="surveillance_period_case_count">
+    <id name="id" column="count_id" type="int"><generator class="native"/></id>
     <property name="uuid" column="uuid" type="string" not-null="true" unique="true" length="38"/>
-    <many-to-one name="evento" column="evento_notificable_id" class="org.openmrs.module.sihsalusepidemiologicalsurveillance.model.EventoNotificable" not-null="true"/>
-    <property name="tipoPeriodo" column="tipo_periodo" type="string" not-null="true"/>
-    <property name="anio" column="anio" type="integer" not-null="true"/>
-    <property name="numeroPeriodo" column="numero_periodo" type="integer" not-null="true"/>
-    <property name="fecha" column="fecha" type="timestamp" not-null="false"/>
-    <property name="numeroCasos" column="numero_casos" type="integer" not-null="true"/>
+    <many-to-one name="event" column="event_id" class="org.openmrs.module.sihsalusepidemiologicalsurveillance.model.NotifiableEvent" not-null="true"/>
+    <property name="periodType" column="period_type" type="string" not-null="true"/>
+    <property name="year" column="calendar_year" type="integer" not-null="true"/>
+    <property name="periodNumber" column="period_number" type="integer" not-null="true"/>
+    <property name="date" column="period_date" type="timestamp" not-null="false"/>
+    <property name="caseCount" column="case_count" type="integer" not-null="true"/>
   </class>
-  <class name="FocoEpidemiologico" table="foco_epidemiologico">
-    <id name="id" column="foco_id" type="int"><generator class="native"/></id>
+  <class name="EpidemiologicalFocus" table="surveillance_epidemiological_focus">
+    <id name="id" column="focus_id" type="int"><generator class="native"/></id>
     <property name="uuid" column="uuid" type="string" not-null="true" unique="true" length="38"/>
-    <many-to-one name="evento" column="evento_notificable_id" class="org.openmrs.module.sihsalusepidemiologicalsurveillance.model.EventoNotificable" not-null="true"/>
+    <many-to-one name="event" column="event_id" class="org.openmrs.module.sihsalusepidemiologicalsurveillance.model.NotifiableEvent" not-null="true"/>
     <many-to-one name="location" column="location_id" class="org.openmrs.Location" not-null="true"/>
-    <property name="clasificacion" column="clasificacion" type="string" not-null="true"/>
-    <property name="receptivo" column="receptivo" type="boolean" not-null="true"/>
-    <property name="fechaUltimoCaso" column="fecha_ultimo_caso" type="timestamp" not-null="false"/>
+    <property name="classification" column="classification" type="string" not-null="true"/>
+    <property name="receptive" column="receptive" type="boolean" not-null="true"/>
+    <property name="lastCaseDate" column="last_case_date" type="timestamp" not-null="false"/>
   </class>
-  <class name="AuditoriaVigilancia" table="auditoria_vigilancia">
-    <id name="id" column="auditoria_id" type="int"><generator class="native"/></id>
+  <class name="SurveillanceAudit" table="surveillance_audit">
+    <id name="id" column="audit_id" type="int"><generator class="native"/></id>
     <property name="uuid" column="uuid" type="string" not-null="true" unique="true" length="38"/>
-    <many-to-one name="usuario" column="usuario_id" class="org.openmrs.User" not-null="true"/>
-    <property name="fechaHora" column="fecha_hora" type="timestamp" not-null="true"/>
-    <property name="tipoAccion" column="tipo_accion" type="string" not-null="true"/>
-    <property name="entidadAfectada" column="entidad_afectada" type="string" not-null="true"/>
-    <property name="registroAfectadoId" column="registro_afectado_id" type="integer" not-null="false"/>
-    <property name="campoModificado" column="campo_modificado" type="string" not-null="false"/>
-    <property name="valorAnterior" column="valor_anterior" type="text" not-null="false"/>
-    <property name="valorNuevo" column="valor_nuevo" type="text" not-null="false"/>
-    <property name="resultadoAccion" column="resultado_accion" type="string" not-null="true"/>
+    <many-to-one name="user" column="user_id" class="org.openmrs.User" not-null="true"/>
+    <property name="timestamp" column="occurred_at" type="timestamp" not-null="true"/>
+    <property name="actionType" column="action_type" type="string" not-null="true"/>
+    <property name="affectedEntity" column="affected_entity" type="string" not-null="true"/>
+    <property name="affectedRecordId" column="affected_record_id" type="integer" not-null="false"/>
+    <property name="changedField" column="changed_field" type="string" not-null="false"/>
+    <property name="previousValue" column="previous_value" type="text" not-null="false"/>
+    <property name="newValue" column="new_value" type="text" not-null="false"/>
+    <property name="result" column="result" type="string" not-null="true"/>
   </class>
-  <class name="NotificacionNoti" table="notificacion_noti">
-    <id name="id" column="notificacion_id" type="int"><generator class="native"/></id>
+  <class name="NotiNotification" table="surveillance_noti_notification">
+    <id name="id" column="notification_id" type="int"><generator class="native"/></id>
     <property name="uuid" column="uuid" type="string" not-null="true" unique="true" length="38"/>
     <many-to-one name="encounter" column="encounter_id" class="org.openmrs.Encounter" not-null="true"/>
-    <many-to-one name="evento" column="evento_notificable_id" class="org.openmrs.module.sihsalusepidemiologicalsurveillance.model.EventoNotificable" not-null="true"/>
-    <property name="versionFormato" column="version_formato" type="string" not-null="true"/>
-    <property name="contenidoExportable" column="contenido_exportable" type="text" not-null="true"/>
-    <property name="estadoEnvio" column="estado_envio" type="string" not-null="true"/>
-    <property name="fechaGeneracion" column="fecha_generacion" type="timestamp" not-null="true"/>
+    <many-to-one name="event" column="event_id" class="org.openmrs.module.sihsalusepidemiologicalsurveillance.model.NotifiableEvent" not-null="true"/>
+    <property name="formatVersion" column="format_version" type="string" not-null="true"/>
+    <property name="exportContent" column="export_content" type="text" not-null="true"/>
+    <property name="sendStatus" column="send_status" type="string" not-null="true"/>
+    <property name="generatedAt" column="generated_at" type="timestamp" not-null="true"/>
   </class>
 </hibernate-mapping>
 

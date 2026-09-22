@@ -4,7 +4,7 @@ import java.time.*;
 import java.time.temporal.WeekFields;
 import java.util.Date;
 
-import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.Metadata;
+import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.ClinicalCatalog;
 
 public class EpidemiologicalCalendar {
 	
@@ -12,9 +12,9 @@ public class EpidemiologicalCalendar {
 	
 	private final WeekFields weeks;
 	
-	public EpidemiologicalCalendar(Metadata metadata) {
-		zone = ZoneId.of(metadata.timezone);
-		weeks = WeekFields.of(DayOfWeek.valueOf(metadata.firstDayOfWeek), metadata.minimalDaysInFirstWeek);
+	public EpidemiologicalCalendar(ClinicalCatalog catalog) {
+		zone = ZoneId.of(catalog.timezone);
+		weeks = WeekFields.of(DayOfWeek.valueOf(catalog.firstDayOfWeek), catalog.minimalDaysInFirstWeek);
 	}
 	
 	public Date date(LocalDate date) {

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9 http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
+  <!-- Preserve old checksums and data. MySQL CHANGE requires the complete column definition. -->
+  <changeSet id="9-english-surveillance-tables" author="sihsalus">
+    <renameTable oldTableName="evento_notificable" newTableName="surveillance_notifiable_event"/>
+    <renameTable oldTableName="regla_alerta_brote" newTableName="surveillance_outbreak_alert_rule"/>
+    <renameTable oldTableName="conteo_casos_periodo" newTableName="surveillance_period_case_count"/>
+    <renameTable oldTableName="foco_epidemiologico" newTableName="surveillance_epidemiological_focus"/>
+    <renameTable oldTableName="auditoria_vigilancia" newTableName="surveillance_audit"/>
+    <renameTable oldTableName="notificacion_noti" newTableName="surveillance_noti_notification"/>
+  </changeSet>
+  <changeSet id="10-english-surveillance-columns" author="sihsalus" dbms="!mysql,!mariadb">
+    <renameColumn tableName="surveillance_notifiable_event" oldColumnName="evento_notificable_id" newColumnName="event_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_notifiable_event" oldColumnName="nombre" newColumnName="name" columnDataType="varchar(255)"/>
+    <renameColumn tableName="surveillance_notifiable_event" oldColumnName="periodicidad" newColumnName="periodicity" columnDataType="varchar(255)"/>
+    <renameColumn tableName="surveillance_notifiable_event" oldColumnName="plazo_dias" newColumnName="deadline_days" columnDataType="int"/>
+    <renameColumn tableName="surveillance_outbreak_alert_rule" oldColumnName="regla_id" newColumnName="rule_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_outbreak_alert_rule" oldColumnName="evento_notificable_id" newColumnName="event_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_outbreak_alert_rule" oldColumnName="tipo_condicion" newColumnName="condition_type" columnDataType="varchar(255)"/>
+    <renameColumn tableName="surveillance_outbreak_alert_rule" oldColumnName="ventana_semanas" newColumnName="window_weeks" columnDataType="int"/>
+    <renameColumn tableName="surveillance_outbreak_alert_rule" oldColumnName="valor_umbral" newColumnName="threshold" columnDataType="double"/>
+    <renameColumn tableName="surveillance_outbreak_alert_rule" oldColumnName="activa" newColumnName="active" columnDataType="boolean"/>
+    <renameColumn tableName="surveillance_period_case_count" oldColumnName="conteo_id" newColumnName="count_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_period_case_count" oldColumnName="evento_notificable_id" newColumnName="event_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_period_case_count" oldColumnName="tipo_periodo" newColumnName="period_type" columnDataType="varchar(255)"/>
+    <renameColumn tableName="surveillance_period_case_count" oldColumnName="anio" newColumnName="calendar_year" columnDataType="int"/>
+    <renameColumn tableName="surveillance_period_case_count" oldColumnName="numero_periodo" newColumnName="period_number" columnDataType="int"/>
+    <renameColumn tableName="surveillance_period_case_count" oldColumnName="fecha" newColumnName="period_date" columnDataType="datetime"/>
+    <renameColumn tableName="surveillance_period_case_count" oldColumnName="numero_casos" newColumnName="case_count" columnDataType="int"/>
+    <renameColumn tableName="surveillance_epidemiological_focus" oldColumnName="foco_id" newColumnName="focus_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_epidemiological_focus" oldColumnName="evento_notificable_id" newColumnName="event_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_epidemiological_focus" oldColumnName="clasificacion" newColumnName="classification" columnDataType="varchar(255)"/>
+    <renameColumn tableName="surveillance_epidemiological_focus" oldColumnName="receptivo" newColumnName="receptive" columnDataType="boolean"/>
+    <renameColumn tableName="surveillance_epidemiological_focus" oldColumnName="fecha_ultimo_caso" newColumnName="last_case_date" columnDataType="datetime"/>
+    <renameColumn tableName="surveillance_audit" oldColumnName="auditoria_id" newColumnName="audit_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_audit" oldColumnName="usuario_id" newColumnName="user_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_audit" oldColumnName="fecha_hora" newColumnName="occurred_at" columnDataType="datetime"/>
+    <renameColumn tableName="surveillance_audit" oldColumnName="tipo_accion" newColumnName="action_type" columnDataType="varchar(255)"/>
+    <renameColumn tableName="surveillance_audit" oldColumnName="entidad_afectada" newColumnName="affected_entity" columnDataType="varchar(255)"/>
+    <renameColumn tableName="surveillance_audit" oldColumnName="registro_afectado_id" newColumnName="affected_record_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_audit" oldColumnName="campo_modificado" newColumnName="changed_field" columnDataType="varchar(255)"/>
+    <renameColumn tableName="surveillance_audit" oldColumnName="valor_anterior" newColumnName="previous_value" columnDataType="clob"/>
+    <renameColumn tableName="surveillance_audit" oldColumnName="valor_nuevo" newColumnName="new_value" columnDataType="clob"/>
+    <renameColumn tableName="surveillance_audit" oldColumnName="resultado_accion" newColumnName="result" columnDataType="varchar(255)"/>
+    <renameColumn tableName="surveillance_noti_notification" oldColumnName="notificacion_id" newColumnName="notification_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_noti_notification" oldColumnName="evento_notificable_id" newColumnName="event_id" columnDataType="int"/>
+    <renameColumn tableName="surveillance_noti_notification" oldColumnName="version_formato" newColumnName="format_version" columnDataType="varchar(255)"/>
+    <renameColumn tableName="surveillance_noti_notification" oldColumnName="contenido_exportable" newColumnName="export_content" columnDataType="clob"/>
+    <renameColumn tableName="surveillance_noti_notification" oldColumnName="estado_envio" newColumnName="send_status" columnDataType="varchar(255)"/>
+    <renameColumn tableName="surveillance_noti_notification" oldColumnName="fecha_generacion" newColumnName="generated_at" columnDataType="datetime"/>
+  </changeSet>
+  <changeSet id="10-english-surveillance-columns-mysql" author="sihsalus" dbms="mysql,mariadb">
+    <sql>
+      ALTER TABLE `surveillance_notifiable_event` CHANGE COLUMN `evento_notificable_id` `event_id` int NOT NULL AUTO_INCREMENT;
+      ALTER TABLE `surveillance_notifiable_event` CHANGE COLUMN `nombre` `name` varchar(255) NOT NULL;
+      ALTER TABLE `surveillance_notifiable_event` CHANGE COLUMN `periodicidad` `periodicity` varchar(255) NOT NULL;
+      ALTER TABLE `surveillance_notifiable_event` CHANGE COLUMN `plazo_dias` `deadline_days` int NOT NULL;
+      ALTER TABLE `surveillance_outbreak_alert_rule` CHANGE COLUMN `regla_id` `rule_id` int NOT NULL AUTO_INCREMENT;
+      ALTER TABLE `surveillance_outbreak_alert_rule` CHANGE COLUMN `evento_notificable_id` `event_id` int NOT NULL;
+      ALTER TABLE `surveillance_outbreak_alert_rule` CHANGE COLUMN `tipo_condicion` `condition_type` varchar(255) NOT NULL;
+      ALTER TABLE `surveillance_outbreak_alert_rule` CHANGE COLUMN `ventana_semanas` `window_weeks` int NULL;
+      ALTER TABLE `surveillance_outbreak_alert_rule` CHANGE COLUMN `valor_umbral` `threshold` double NULL;
+      ALTER TABLE `surveillance_outbreak_alert_rule` CHANGE COLUMN `activa` `active` TINYINT(1) NOT NULL;
+      ALTER TABLE `surveillance_period_case_count` CHANGE COLUMN `conteo_id` `count_id` int NOT NULL AUTO_INCREMENT;
+      ALTER TABLE `surveillance_period_case_count` CHANGE COLUMN `evento_notificable_id` `event_id` int NOT NULL;
+      ALTER TABLE `surveillance_period_case_count` CHANGE COLUMN `tipo_periodo` `period_type` varchar(255) NOT NULL;
+      ALTER TABLE `surveillance_period_case_count` CHANGE COLUMN `anio` `calendar_year` int NOT NULL;
+      ALTER TABLE `surveillance_period_case_count` CHANGE COLUMN `numero_periodo` `period_number` int NOT NULL;
+      ALTER TABLE `surveillance_period_case_count` CHANGE COLUMN `fecha` `period_date` datetime NULL;
+      ALTER TABLE `surveillance_period_case_count` CHANGE COLUMN `numero_casos` `case_count` int NOT NULL;
+      ALTER TABLE `surveillance_epidemiological_focus` CHANGE COLUMN `foco_id` `focus_id` int NOT NULL AUTO_INCREMENT;
+      ALTER TABLE `surveillance_epidemiological_focus` CHANGE COLUMN `evento_notificable_id` `event_id` int NOT NULL;
+      ALTER TABLE `surveillance_epidemiological_focus` CHANGE COLUMN `clasificacion` `classification` varchar(255) NOT NULL;
+      ALTER TABLE `surveillance_epidemiological_focus` CHANGE COLUMN `receptivo` `receptive` TINYINT(1) NOT NULL;
+      ALTER TABLE `surveillance_epidemiological_focus` CHANGE COLUMN `fecha_ultimo_caso` `last_case_date` datetime NULL;
+      ALTER TABLE `surveillance_audit` CHANGE COLUMN `auditoria_id` `audit_id` int NOT NULL AUTO_INCREMENT;
+      ALTER TABLE `surveillance_audit` CHANGE COLUMN `usuario_id` `user_id` int NOT NULL;
+      ALTER TABLE `surveillance_audit` CHANGE COLUMN `fecha_hora` `occurred_at` datetime NOT NULL;
+      ALTER TABLE `surveillance_audit` CHANGE COLUMN `tipo_accion` `action_type` varchar(255) NOT NULL;
+      ALTER TABLE `surveillance_audit` CHANGE COLUMN `entidad_afectada` `affected_entity` varchar(255) NOT NULL;
+      ALTER TABLE `surveillance_audit` CHANGE COLUMN `registro_afectado_id` `affected_record_id` int NULL;
+      ALTER TABLE `surveillance_audit` CHANGE COLUMN `campo_modificado` `changed_field` varchar(255) NULL;
+      ALTER TABLE `surveillance_audit` CHANGE COLUMN `valor_anterior` `previous_value` LONGTEXT NULL;
+      ALTER TABLE `surveillance_audit` CHANGE COLUMN `valor_nuevo` `new_value` LONGTEXT NULL;
+      ALTER TABLE `surveillance_audit` CHANGE COLUMN `resultado_accion` `result` varchar(255) NOT NULL;
+      ALTER TABLE `surveillance_noti_notification` CHANGE COLUMN `notificacion_id` `notification_id` int NOT NULL AUTO_INCREMENT;
+      ALTER TABLE `surveillance_noti_notification` CHANGE COLUMN `evento_notificable_id` `event_id` int NOT NULL;
+      ALTER TABLE `surveillance_noti_notification` CHANGE COLUMN `version_formato` `format_version` varchar(255) NOT NULL;
+      ALTER TABLE `surveillance_noti_notification` CHANGE COLUMN `contenido_exportable` `export_content` LONGTEXT NOT NULL;
+      ALTER TABLE `surveillance_noti_notification` CHANGE COLUMN `estado_envio` `send_status` varchar(255) NOT NULL;
+      ALTER TABLE `surveillance_noti_notification` CHANGE COLUMN `fecha_generacion` `generated_at` datetime NOT NULL;
+    </sql>
+  </changeSet>
+  <changeSet id="11-surveillance-scheduler-description" author="sihsalus">
+    <update tableName="scheduler_task_config">
+      <column name="description" value="Recalculate confirmed cases from native diagnoses and symptom-onset observations using the fixed clinical catalog."/>
+      <where>uuid = '1568be35-4d88-485b-9698-d6cda57f8c5e'</where>
+    </update>
+  </changeSet>
+  <!--
+    scheduler_task_config is global. Its startup hook is invoked before module
+    class loaders are installed, so a task implemented by this OMOD cannot be
+    resolved there. SurveillanceActivator schedules it after module startup.
+  -->
+  <changeSet id="12-surveillance-scheduler-after-module-start" author="sihsalus">
+    <update tableName="scheduler_task_config">
+      <column name="start_on_startup" valueBoolean="false"/>
+      <where>uuid = '1568be35-4d88-485b-9698-d6cda57f8c5e'</where>
+    </update>
+  </changeSet>
+</databaseChangeLog>

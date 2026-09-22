@@ -14,22 +14,23 @@ public interface SurveillanceDao {
 	
 	<T extends BaseOpenmrsObject> T byUuid(Class<T> type, String uuid);
 	
-	List<EventoNotificable> events();
+	List<NotifiableEvent> events();
 	
-	List<ReglaAlertaBrote> rules(EventoNotificable event);
+	NotifiableEvent eventByConcept(org.openmrs.Concept concept);
 	
-	FocoEpidemiologico focus(EventoNotificable event, String locationUuid);
+	List<OutbreakAlertRule> rules(NotifiableEvent event);
 	
-	List<ConteoCasosPeriodo> counts(EventoNotificable event, String period, int fromYear, int toYear);
+	EpidemiologicalFocus focus(NotifiableEvent event, String locationUuid);
 	
-	void replaceCounts(EventoNotificable event, List<ConteoCasosPeriodo> counts);
+	List<PeriodCaseCount> counts(NotifiableEvent event, String period, int fromYear, int toYear);
+	
+	void replaceCounts(NotifiableEvent event, List<PeriodCaseCount> counts);
 	
 	void lockPatient(Patient patient);
 	
-	void lockEvent(EventoNotificable event);
+	void lockEvent(NotifiableEvent event);
 	
-	List<Encounter> encounters(String encounterTypeUuid, Date from, Date to, String onsetConceptUuid);
+	List<Encounter> encounters(Date from, Date to, String onsetConceptUuid);
 	
-	List<Encounter> possibleDuplicates(String encounterTypeUuid, Patient patient, List<String> diagnoses, Date from, Date to,
-	        String onsetConceptUuid);
+	List<Encounter> possibleDuplicates(Patient patient, List<String> diagnoses, Date from, Date to, String onsetConceptUuid);
 }

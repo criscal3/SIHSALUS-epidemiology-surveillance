@@ -1,5 +1,15 @@
 # Informe de pruebas — Iteración 1 / RE 3.1
 
+## Actualización: catálogo fijo y administración de eventos (2026-09-19)
+
+Validación local actual: **64 pruebas API + 4 pruebas OMOD = 68 exitosas**, mediante `mvn verify`. Frontend: **37 pruebas Vitest y 2 comprobaciones HMR exitosas**, además de TypeScript, lint y build correctos. Los resultados del 14 de septiembre que siguen se conservan como evidencia histórica.
+
+Se verificaron creación/consulta/edición/baja lógica de eventos, conflictos de identidad, permisos, bloqueo de nuevos registros para eventos retirados y disponibilidad de sus reportes históricos. MockMvc verifica las rutas GET/PUT/DELETE y healthcheck. Un concepto ausente no bloquea el catálogo, pero el registro devuelve un error específico sin persistir el caso.
+
+La prueba Liquibase aplica el esquema anterior, modifica un evento, confirma la transacción y ejecuta la actualización: conserva el nombre y las relaciones, agrega `retired=false` y mantiene restricciones de unicidad e integridad referencial. Las entidades, tablas y columnas finales usan inglés. Los changesets anteriores permanecen intactos. Para MySQL/MariaDB, las sentencias de renombrado conservan explícitamente nulabilidad y AUTO_INCREMENT.
+
+La migración se ejecutó en H2; **no se ejecutó contra MySQL/MariaDB ni contra el servidor DEV**. El artefacto compilado no contiene las clases antiguas de configuración ni las entidades Java anteriores. Actualizar OMOD y ESM juntos por el contrato `/catalog`.
+
 Fecha: **2026-09-14**. Entorno: Windows 11, Maven 3.9.16, JDK 25.0.2 (compilación Java 8), OpenMRS 2.4.2, Node 24.20.0, Yarn 4.13.0, Vitest 4.1.11. Datos exclusivamente sintéticos; sin acceso a base clínica real ni despliegue.
 
 ## Resultado reproducible
@@ -49,8 +59,8 @@ Las comprobaciones de estilo, tipos, compilación, exposición de errores, privi
 | --- | ---: | --- |
 | Esquema — LiquibaseMigrationTest | 1 | Changelog raíz completo, aplicación repetida, seis tablas, scheduler único, FK reales y unicidad del conteo. H2 con claves nativas sintéticas. |
 | Acceso — SurveillanceDaoTest | 3 | Persistencia/UUID, bloqueo parametrizado del paciente, filtro de diagnósticos anulados y ventana de inicio. |
-| Persistencia — NativePersistenceTest | 3 | Harness real OpenMRS, mappings/HQL y guardado de Encounter + 6 Obs + Diagnosis; limpieza de sesión y recarga. Metadatos/acceso del caso son fixtures; servicios clínicos y DAO reales. |
-| Contenido — MetadataResolverTest | 6 | Referencias y respuestas válidas, ausencia de configuración, tipo erróneo, respuesta ajena, atributo de gestación no Boolean y rechazo de réplica no implementada. |
+| Persistencia — NativePersistenceTest | 3 | Harness real OpenMRS, mappings/HQL y guardado de Encounter + 6 Obs + Diagnosis; limpieza de sesión y recarga. Contenido/acceso del caso son fixtures; servicios clínicos y DAO reales. |
+| Contenido — validación global anterior (retirada) | 6 | Evidencia histórica; reemplazada por ClinicalCatalogServiceTest y validaciones por operación. |
 | Registro — CaseValidatorTest | 16 | Sospechoso, positivo confirmado, negativo descartado, campos/fechas, proveedor ajeno, paciente/visita incorrectos, laboratorio anulado, inicio posterior a defunción y gestación explícita/desconocida. |
 | Servicio — SurveillanceServiceTest | 8 | Registro, auditoría, duplicados sin escritura, reintento sin duplicación, conflicto de contenido, permiso denegado, alerta grave y recálculo. Orden de bloqueo previo a escritura. |
 | Motor — OutbreakEngineTest | 10 | Alertas inmediatas, Q3, aumento sostenido ≥Q2, foco eliminado, reglas desactivadas e historia insuficiente. |

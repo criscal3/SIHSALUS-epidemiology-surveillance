@@ -2,7 +2,7 @@ package org.openmrs.module.sihsalusepidemiologicalsurveillance.api;
 
 import java.util.Arrays;
 
-import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.Metadata;
+import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.ClinicalCatalog;
 
 /** UUIDs checked against sihsalus-content; no runtime JSON or global property. */
 public final class SurveillanceCatalog {
@@ -10,10 +10,9 @@ public final class SurveillanceCatalog {
 	private SurveillanceCatalog() {
 	}
 	
-	public static Metadata create() {
-		Metadata m = new Metadata();
+	public static ClinicalCatalog create() {
+		ClinicalCatalog m = new ClinicalCatalog();
 		m.surveillanceStartDate = "2026-01-01";
-		m.encounterTypeUuid = "ff7327ce-f06e-4a2e-ba2a-8ef0cf7b89d7";
 		m.encounterRoleUuid = "240b26f9-dd88-4172-823d-4a8bfeb7841f";
 		m.ethnicityAttributeTypeUuid = "8d871386-c2cc-11de-8d13-0010c6dffd0f";
 		m.icd10SourceUuid = "4faa9f66-d80f-4685-9645-af206fce7fa5";
@@ -36,7 +35,7 @@ public final class SurveillanceCatalog {
 		    choice("INTRODUCED", "Introducido", "26489304-ab5d-5054-b264-90237755c7dd"),
 		    choice("RELAPSE", "Recaída", "8d72526b-d887-5726-92ad-64c5786ecc53"),
 		    choice("RECRUDESCENCE", "Recrudescencia", "5f25f0b3-e4fa-5ab4-8f68-617f814f3e35")));
-		Metadata.Disease dengue = disease("bfed631e-99de-5e50-a3a6-cbfec73437a1", "DENGUE");
+		ClinicalCatalog.Disease dengue = disease("bfed631e-99de-5e50-a3a6-cbfec73437a1", "DENGUE");
 		dengue.severities.addAll(
 		    Arrays.asList(choice("NO_WARNING", "Dengue sin señales de alarma", "3631f126-c62d-58de-bada-9c1977faa791"),
 		        choice("WARNING", "Dengue con señales de alarma", "1715a15d-35fa-5649-85b8-31aa6e09aef9"),
@@ -46,7 +45,7 @@ public final class SurveillanceCatalog {
 		    diagnosis("SEVERE", null, "bb01974a-a2e2-42de-af95-0201882eacb5", "A972")));
 		dengue.laboratoryTests.add(lab("09b60459-3661-50e5-b762-18543b9e5ed1", "ad17b417-d6b2-5769-b553-a8bd8d78bd11"));
 		dengue.laboratoryTests.add(lab("48b98d15-b407-5ef3-8b5d-1f51a7bf649b", "693ab609-656f-55af-9584-7a229234f232"));
-		Metadata.Disease malaria = disease("ae35724f-6a37-5777-8fc9-799f5733e899", "MALARIA");
+		ClinicalCatalog.Disease malaria = disease("ae35724f-6a37-5777-8fc9-799f5733e899", "MALARIA");
 		malaria.severities
 		        .addAll(Arrays.asList(choice("NO_WARNING", "Malaria no complicada", "23def129-d8dd-5e1c-a9dd-d5164265e138"),
 		            choice("SEVERE", "Malaria grave", "203f0a2a-59f4-58bf-8d2b-df08d5fd20be")));
@@ -70,23 +69,23 @@ public final class SurveillanceCatalog {
 		return m;
 	}
 	
-	private static Metadata.Choice choice(String key, String label, String uuid) {
-		Metadata.Choice choice = new Metadata.Choice();
+	private static ClinicalCatalog.Choice choice(String key, String label, String uuid) {
+		ClinicalCatalog.Choice choice = new ClinicalCatalog.Choice();
 		choice.key = key;
 		choice.label = label;
 		choice.conceptUuid = uuid;
 		return choice;
 	}
 	
-	private static Metadata.Disease disease(String uuid, String family) {
-		Metadata.Disease disease = new Metadata.Disease();
+	private static ClinicalCatalog.Disease disease(String uuid, String family) {
+		ClinicalCatalog.Disease disease = new ClinicalCatalog.Disease();
 		disease.eventUuid = uuid;
 		disease.family = family;
 		return disease;
 	}
 	
-	private static Metadata.DiagnosisMapping diagnosis(String severity, String species, String uuid, String code) {
-		Metadata.DiagnosisMapping mapping = new Metadata.DiagnosisMapping();
+	private static ClinicalCatalog.DiagnosisMapping diagnosis(String severity, String species, String uuid, String code) {
+		ClinicalCatalog.DiagnosisMapping mapping = new ClinicalCatalog.DiagnosisMapping();
 		mapping.severity = severity;
 		mapping.species = species;
 		mapping.diagnosisConceptUuid = uuid;
@@ -94,8 +93,8 @@ public final class SurveillanceCatalog {
 		return mapping;
 	}
 	
-	private static Metadata.LabTest lab(String order, String result) {
-		Metadata.LabTest test = new Metadata.LabTest();
+	private static ClinicalCatalog.LabTest lab(String order, String result) {
+		ClinicalCatalog.LabTest test = new ClinicalCatalog.LabTest();
 		test.orderConceptUuid = order;
 		test.resultConceptUuid = result;
 		test.positiveAnswerUuids.add("45c849f7-4c90-5209-a2ce-567eecb8c1ee");

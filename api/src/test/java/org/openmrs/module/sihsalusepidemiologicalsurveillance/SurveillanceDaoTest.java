@@ -22,7 +22,7 @@ public class SurveillanceDaoTest {
 		when(factory.getCurrentSession()).thenReturn(session);
 		HibernateSurveillanceDao dao = new HibernateSurveillanceDao();
 		dao.setSessionFactory(factory);
-		EventoNotificable event = new EventoNotificable();
+		NotifiableEvent event = new NotifiableEvent();
 		dao.save(event);
 		assertNotNull(event.getUuid());
 		verify(session).saveOrUpdate(event);
@@ -58,7 +58,7 @@ public class SurveillanceDaoTest {
 		HibernateSurveillanceDao dao = new HibernateSurveillanceDao();
 		dao.setSessionFactory(factory);
 		Date from = new Date(0), to = new Date(1000);
-		dao.possibleDuplicates("type", new Patient(2), Arrays.asList("diagnosis"), from, to, "onset");
+		dao.possibleDuplicates(new Patient(2), Arrays.asList("diagnosis"), from, to, "onset");
 		verify(query).setTimestamp("from", from);
 		verify(query).setTimestamp("to", to);
 		verify(query).setParameterList("diagnoses", Arrays.asList("diagnosis"));

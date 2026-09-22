@@ -96,4 +96,11 @@
         AND NOT EXISTS (SELECT 1 FROM evento_notificable WHERE uuid = 'ae35724f-6a37-5777-8fc9-799f5733e899' OR concept_id = c.concept_id);
     </sql>
   </changeSet>
+  <changeSet id="8-retire-notifiable-event" author="sihsalus">
+    <addColumn tableName="evento_notificable">
+      <column name="retired" type="boolean" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+  </changeSet>
 </databaseChangeLog>

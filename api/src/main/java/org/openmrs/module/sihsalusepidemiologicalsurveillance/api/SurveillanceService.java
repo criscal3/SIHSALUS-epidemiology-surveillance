@@ -1,5 +1,6 @@
 package org.openmrs.module.sihsalusepidemiologicalsurveillance.api;
 
+import java.util.List;
 import java.util.Map;
 
 import org.openmrs.annotation.Authorized;
@@ -14,7 +15,25 @@ public interface SurveillanceService extends OpenmrsService {
 	
 	@Authorized(SurveillanceConstants.ACCESS)
 	@Transactional(readOnly = true)
-	Map<String, Object> getMetadata();
+	Map<String, Object> getCatalog();
+	
+	@Authorized(SurveillanceConstants.ACCESS)
+	@Transactional(readOnly = true)
+	Map<String, Object> healthcheck();
+	
+	@Authorized(SurveillanceConstants.ACCESS)
+	@Transactional(readOnly = true)
+	List<Map<String, Object>> getEvents(boolean includeRetired);
+	
+	@Authorized(SurveillanceConstants.ACCESS)
+	@Transactional(readOnly = true)
+	Map<String, Object> getEvent(String uuid);
+	
+	@Authorized(SurveillanceConstants.MANAGE)
+	Map<String, Object> updateEvent(String uuid, Map<String, Object> body);
+	
+	@Authorized(SurveillanceConstants.MANAGE)
+	void deleteEvent(String uuid);
 	
 	@Authorized(SurveillanceConstants.REGISTER)
 	@Transactional(isolation = Isolation.READ_COMMITTED)

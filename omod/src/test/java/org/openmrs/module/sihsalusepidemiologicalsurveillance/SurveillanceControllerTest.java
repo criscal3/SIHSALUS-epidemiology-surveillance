@@ -13,6 +13,33 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.web.controller.Sur
 public class SurveillanceControllerTest {
 	
 	@Test
+	public void eventRoutesDispatchAndDeleteReturnsNoContent() throws Exception {
+		SurveillanceService service = mock(SurveillanceService.class);
+		SurveillanceController controller = new SurveillanceController();
+		controller.setService(service);
+		org.springframework.test.web.servlet.MockMvc mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
+		        .standaloneSetup(controller).build();
+		String base = "/rest/v1/sihsalusepidemiologicalsurveillance";
+		mvc.perform(
+		    org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(base + "/events?includeRetired=true"))
+		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(base + "/events/event"))
+		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(base + "/events/event")
+		        .contentType("application/json").content("{\"name\":\"Updated\"}"))
+		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(base + "/events/event"))
+		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNoContent());
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(base + "/healthcheck"))
+		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+		verify(service).getEvents(true);
+		verify(service).getEvent("event");
+		verify(service).updateEvent(eq("event"), anyMap());
+		verify(service).deleteEvent("event");
+		verify(service).healthcheck();
+	}
+	
+	@Test
 	public void delegatesWritesToProtectedService() {
 		SurveillanceService service = mock(SurveillanceService.class);
 		SurveillanceController controller = new SurveillanceController();

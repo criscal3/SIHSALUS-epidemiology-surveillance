@@ -12,6 +12,12 @@
     <description>Omod submodule for Epidemiologysurveillance</description>
     <dependencies>
         <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.github.proyecto-santaclotilde</groupId>
             <artifactId>sihsalusepidemiologicalsurveillance-api</artifactId>
             <version>1.0.0-SNAPSHOT</version>

@@ -1,9 +1,10 @@
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\CaseValidatorTest.java
+C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\ClinicalCatalogServiceTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\EndemicChannelTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\EpidemiologicalCalendarTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\LiquibaseMigrationTest.java
-C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\MetadataResolverTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\NativePersistenceTest.java
+C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\NotifiableEventTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\OutbreakEngineTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\RefreshCountsTaskTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\ReportCalculatorTest.java

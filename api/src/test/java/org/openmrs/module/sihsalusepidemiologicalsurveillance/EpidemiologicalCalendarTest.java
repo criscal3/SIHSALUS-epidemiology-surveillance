@@ -6,13 +6,13 @@ import java.time.LocalDate;
 
 import org.junit.Test;
 import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.EpidemiologicalCalendar;
-import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.Metadata;
+import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.ClinicalCatalog;
 
 public class EpidemiologicalCalendarTest {
 	
 	@Test
 	public void newYearUsesWeekYearNotCalendarYear() {
-		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(new Metadata());
+		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(new ClinicalCatalog());
 		LocalDate date = LocalDate.of(2021, 1, 1);
 		assertEquals(2020, calendar.year(date, "semana"));
 		assertEquals(53, calendar.number(date, "semana"));
@@ -21,7 +21,7 @@ public class EpidemiologicalCalendarTest {
 	
 	@Test
 	public void handlesLeapDaysAndTimezoneRoundtrip() {
-		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(new Metadata());
+		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(new ClinicalCatalog());
 		LocalDate date = LocalDate.of(2024, 2, 29);
 		assertEquals(date, calendar.local(calendar.date(date)));
 		assertEquals(60, calendar.number(date, "dia"));

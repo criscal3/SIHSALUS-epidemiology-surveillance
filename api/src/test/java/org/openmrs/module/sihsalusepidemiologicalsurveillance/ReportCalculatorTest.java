@@ -12,7 +12,7 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.*;
 
 public class ReportCalculatorTest {
 	
-	final Metadata m = new Metadata();
+	final ClinicalCatalog m = new ClinicalCatalog();
 	
 	final ReportCalculator calculator = new ReportCalculator();
 	
@@ -31,7 +31,7 @@ public class ReportCalculatorTest {
 	public void curveUsesOnsetIncludesZeroDaysAndExcludesDiscarded() {
 		SurveillanceReport report = calculator.calculate("event", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), "dia",
 		    Arrays.asList(record("CONFIRMED"), record("DISCARDED"), record("SUSPECTED")),
-		    Collections.<ConteoCasosPeriodo> emptyList(), m);
+		    Collections.<PeriodCaseCount> emptyList(), m);
 		assertEquals(1, report.total);
 		assertEquals(3, report.curve.size());
 		assertEquals(0, report.curve.get(0).cases);
@@ -41,7 +41,7 @@ public class ReportCalculatorTest {
 	@Test
 	public void demographicAgeIsAtOnsetAndMissingPregnancyIsExplicit() {
 		SurveillanceReport report = calculator.calculate("event", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), "dia",
-		    Arrays.asList(record("CONFIRMED")), Collections.<ConteoCasosPeriodo> emptyList(), m);
+		    Arrays.asList(record("CONFIRMED")), Collections.<PeriodCaseCount> emptyList(), m);
 		assertEquals(Integer.valueOf(1), report.demographics.get("age").get("5"));
 		assertEquals(Integer.valueOf(1), report.demographics.get("pregnancy").get("UNKNOWN"));
 		assertEquals(Integer.valueOf(1), report.demographics.get("ethnicity").get("UNKNOWN"));
@@ -50,24 +50,24 @@ public class ReportCalculatorTest {
 	@Test
 	public void aggregatesAllPeriodsAndExplicitZeroCoverage() {
 		m.surveillanceStartDate = "2026-01-01";
-		EventoNotificable event = new EventoNotificable();
+		NotifiableEvent event = new NotifiableEvent();
 		event.setUuid("event");
-		List<ConteoCasosPeriodo> counts = calculator.aggregate(event, Arrays.asList(record("CONFIRMED")), m,
+		List<PeriodCaseCount> counts = calculator.aggregate(event, Arrays.asList(record("CONFIRMED")), m,
 		    LocalDate.of(2026, 1, 3));
 		assertEquals(6, counts.size());
 		assertTrue(counts.stream()
-		        .anyMatch(c -> "dia".equals(c.getTipoPeriodo()) && c.getNumeroPeriodo() == 1 && c.getNumeroCasos() == 0));
-		assertFalse(counts.stream().anyMatch(c -> "semana".equals(c.getTipoPeriodo()))); // first week is incompletely covered
+		        .anyMatch(c -> "dia".equals(c.getPeriodType()) && c.getPeriodNumber() == 1 && c.getCaseCount() == 0));
+		assertFalse(counts.stream().anyMatch(c -> "semana".equals(c.getPeriodType()))); // first week is incompletely covered
 	}
 	
 	@Test
 	public void dailyHistoryMatchesCalendarDateAcrossLeapYears() {
-		List<ConteoCasosPeriodo> history = new ArrayList<ConteoCasosPeriodo>();
+		List<PeriodCaseCount> history = new ArrayList<PeriodCaseCount>();
 		for (int year = 2021; year <= 2025; year++) {
-			ConteoCasosPeriodo count = new ConteoCasosPeriodo();
-			count.setAnio(year);
-			count.setNumeroPeriodo(LocalDate.of(year, 3, 1).getDayOfYear());
-			count.setNumeroCasos(4);
+			PeriodCaseCount count = new PeriodCaseCount();
+			count.setYear(year);
+			count.setPeriodNumber(LocalDate.of(year, 3, 1).getDayOfYear());
+			count.setCaseCount(4);
 			history.add(count);
 		}
 		SurveillanceReport report = calculator.calculate("event", LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 1), "dia",
@@ -79,7 +79,7 @@ public class ReportCalculatorTest {
 	@Test
 	public void doesNotAssignDefinitiveZoneToPartialWeeks() {
 		SurveillanceReport report = calculator.calculate("event", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3),
-		    "semana", Arrays.asList(record("CONFIRMED")), Collections.<ConteoCasosPeriodo> emptyList(), m);
+		    "semana", Arrays.asList(record("CONFIRMED")), Collections.<PeriodCaseCount> emptyList(), m);
 		assertEquals("PARTIAL_PERIOD", report.channel.get(0).zone);
 		assertTrue(report.warnings.contains("PARTIAL_PERIOD"));
 	}
@@ -87,7 +87,7 @@ public class ReportCalculatorTest {
 	@Test
 	public void reportContainsNoPatientIdentifiers() {
 		SurveillanceReport report = calculator.calculate("event", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), "dia",
-		    Arrays.asList(record("CONFIRMED")), Collections.<ConteoCasosPeriodo> emptyList(), m);
+		    Arrays.asList(record("CONFIRMED")), Collections.<PeriodCaseCount> emptyList(), m);
 		assertFalse(report.demographics.containsKey("patient"));
 		assertFalse(report.demographics.containsKey("encounterUuid"));
 	}

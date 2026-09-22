@@ -1,0 +1,16 @@
+# REST Client: set baseUrl to the development server and supply an authenticated
+# OpenMRS session cookie locally. Do not commit credentials or session cookies.
+@baseUrl = https://YOUR-DEV-SERVER/openmrs
+@sessionId = REPLACE_LOCALLY
+
+### Expected: HTTP 200, application/json, {"status":"UP"}
+GET {{baseUrl}}/ws/rest/v1/sihsalusepidemiologicalsurveillance/healthcheck
+Accept: application/json
+Cookie: JSESSIONID={{sessionId}}
+
+> {%
+  client.test("Surveillance healthcheck", function () {
+    client.assert(response.status === 200, "Expected HTTP 200");
+    client.assert(response.body.status === "UP", "Expected status UP");
+  });
+%}

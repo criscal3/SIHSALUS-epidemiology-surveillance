@@ -12,7 +12,7 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.*;
 
 public class OutbreakEngineTest {
 	
-	final Metadata m = new Metadata();
+	final ClinicalCatalog m = new ClinicalCatalog();
 	
 	final OutbreakEngine engine = new OutbreakEngine();
 	
@@ -28,18 +28,18 @@ public class OutbreakEngineTest {
 		return r;
 	}
 	
-	ReglaAlertaBrote rule(String type) {
-		ReglaAlertaBrote r = new ReglaAlertaBrote();
-		r.setActiva(true);
-		r.setTipoCondicion(type);
-		r.setVentanaSemanas(2);
+	OutbreakAlertRule rule(String type) {
+		OutbreakAlertRule r = new OutbreakAlertRule();
+		r.setActive(true);
+		r.setConditionType(type);
+		r.setWindowWeeks(2);
 		return r;
 	}
 	
-	FocoEpidemiologico eliminated() {
-		FocoEpidemiologico f = new FocoEpidemiologico();
-		f.setClasificacion("eliminado");
-		f.setReceptivo(false);
+	EpidemiologicalFocus eliminated() {
+		EpidemiologicalFocus f = new EpidemiologicalFocus();
+		f.setClassification("eliminado");
+		f.setReceptive(false);
 		return f;
 	}
 	
@@ -59,15 +59,15 @@ public class OutbreakEngineTest {
 		return records;
 	}
 	
-	List<ConteoCasosPeriodo> history() {
-		List<ConteoCasosPeriodo> values = new ArrayList<ConteoCasosPeriodo>();
+	List<PeriodCaseCount> history() {
+		List<PeriodCaseCount> values = new ArrayList<PeriodCaseCount>();
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
 		for (int year = 2021; year <= 2025; year++)
 			for (LocalDate week : Arrays.asList(date, date.minusWeeks(1))) {
-				ConteoCasosPeriodo value = new ConteoCasosPeriodo();
-				value.setAnio(year);
-				value.setNumeroPeriodo(calendar.number(week, "semana"));
-				value.setNumeroCasos(1);
+				PeriodCaseCount value = new PeriodCaseCount();
+				value.setYear(year);
+				value.setPeriodNumber(calendar.number(week, "semana"));
+				value.setCaseCount(1);
 				values.add(value);
 			}
 		return values;
@@ -102,7 +102,7 @@ public class OutbreakEngineTest {
 		r.status = "SUSPECTED";
 		r.pregnant = true;
 		CaseResult result = new CaseResult();
-		engine.evaluate(r, null, Collections.<ReglaAlertaBrote> emptyList(), records(0, 1), history(), m, result);
+		engine.evaluate(r, null, Collections.<OutbreakAlertRule> emptyList(), records(0, 1), history(), m, result);
 		assertFalse(result.immediateAlerts.contains("CONFIRMED_PREGNANCY"));
 	}
 	
@@ -151,8 +151,8 @@ public class OutbreakEngineTest {
 		CaseRecord r = current();
 		r.severity = "SEVERE";
 		CaseResult result = new CaseResult();
-		engine.evaluate(r, null, Arrays.asList(rule("EPIDEMIC")), records(0, 10),
-		    Collections.<ConteoCasosPeriodo> emptyList(), m, result);
+		engine.evaluate(r, null, Arrays.asList(rule("EPIDEMIC")), records(0, 10), Collections.<PeriodCaseCount> emptyList(),
+		    m, result);
 		assertTrue(result.outbreakAlerts.isEmpty());
 		assertTrue(result.immediateAlerts.contains("SEVERE_CASE"));
 		assertTrue(result.warnings.contains("INSUFFICIENT_HISTORY"));
@@ -160,8 +160,8 @@ public class OutbreakEngineTest {
 	
 	@Test
 	public void inactiveRuleDoesNotTrigger() {
-		ReglaAlertaBrote rule = rule("ELIMINATED_FOCUS");
-		rule.setActiva(false);
+		OutbreakAlertRule rule = rule("ELIMINATED_FOCUS");
+		rule.setActive(false);
 		CaseResult result = new CaseResult();
 		engine.evaluate(current(), eliminated(), Arrays.asList(rule), records(0, 1), history(), m, result);
 		assertTrue(result.outbreakAlerts.isEmpty());

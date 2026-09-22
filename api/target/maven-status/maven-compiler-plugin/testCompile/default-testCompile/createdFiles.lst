@@ -1,5 +1,5 @@
+org\openmrs\module\sihsalusepidemiologicalsurveillance\ClinicalCatalogServiceTest.class
 org\openmrs\module\sihsalusepidemiologicalsurveillance\SurveillanceServiceTest.class
-org\openmrs\module\sihsalusepidemiologicalsurveillance\MetadataResolverTest.class
 org\openmrs\module\sihsalusepidemiologicalsurveillance\SurveillanceDaoTest.class
 org\openmrs\module\sihsalusepidemiologicalsurveillance\LiquibaseMigrationTest.class
 org\openmrs\module\sihsalusepidemiologicalsurveillance\RefreshCountsTaskTest$1.class
@@ -8,6 +8,7 @@ org\openmrs\module\sihsalusepidemiologicalsurveillance\ReportCalculatorTest.clas
 org\openmrs\module\sihsalusepidemiologicalsurveillance\EpidemiologicalCalendarTest.class
 org\openmrs\module\sihsalusepidemiologicalsurveillance\RefreshCountsTaskTest.class
 org\openmrs\module\sihsalusepidemiologicalsurveillance\CaseValidatorTest.class
+org\openmrs\module\sihsalusepidemiologicalsurveillance\NotifiableEventTest.class
 org\openmrs\module\sihsalusepidemiologicalsurveillance\SyntheticFixture.class
 org\openmrs\module\sihsalusepidemiologicalsurveillance\EndemicChannelTest.class
 org\openmrs\module\sihsalusepidemiologicalsurveillance\OutbreakEngineTest.class
