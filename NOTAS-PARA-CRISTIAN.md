@@ -41,3 +41,12 @@ Por decisión de Cristian, mientras Laboratorio no esté implementado completame
 contrato acepta `laboratoryObservationUuid` para pruebas. No se persiste esa observación:
 el backend solo toma `Obs.order` y guarda `test_order_id` cuando existe; de lo contrario
 queda nulo, como permite el modelo.
+## 2026-09-30 â€” pendiente: esquema React Form Engine para registro de casos
+
+El React Form Engine del frontend está diseñado para crear/editar encuentros y `Obs`.
+Para llevar la gestación al encuentro, como exige el modelo, su esquema JSON necesita el
+UUID real del concepto de gestación (y de sus respuestas). No se han proporcionado esos
+UUID ni está disponible la BD de referencia, por lo que no se puede construir un esquema
+ejecutable sin inventar metadatos. El formulario actual persiste los atributos propios de
+`surveillance_case` por el contrato REST y debe conectarse al esquema de encuentro cuando
+se disponga de dicha configuración.
