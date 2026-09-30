@@ -63,8 +63,8 @@ public class SurveillanceController {
 	
 	@RequestMapping(value = "/cases", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public SurveillanceCaseResponse createDraft(@RequestBody SurveillanceCaseRequest body) {
-		return service().createDraft(body);
+	public ResponseEntity<SurveillanceCaseResponse> createDraft(@RequestBody SurveillanceCaseRequest body) {
+		return new ResponseEntity<SurveillanceCaseResponse>(service().createDraft(body), HttpStatus.CREATED);
 	}
 	
 	@RequestMapping(value = "/cases/{uuid}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)

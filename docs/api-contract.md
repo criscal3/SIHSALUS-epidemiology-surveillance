@@ -26,7 +26,7 @@ listo para el flujo de notificación de iteración 2. Mientras no exista dicho f
   "encounterUuid": "uuid",
   "providerUuid": "uuid",
   "locationUuid": "uuid",
-  "encounterDiagnosisUuid": "uuid",
+  "diagnosisUuid": "uuid",
   "testOrderUuid": "uuid opcional",
   "laboratoryObservationUuid": "uuid temporal de Obs; el servidor usa Obs.order si existe",
   "origin": "AUTOCTONO | IMPORTADO_NACIONAL | IMPORTADO_INTERNACIONAL | INDUCIDO | INTRODUCIDO | RECAIDA | RECRUDESCENCIA",
@@ -41,7 +41,7 @@ listo para el flujo de notificación de iteración 2. Mientras no exista dicho f
 }
 ```
 
-El servidor deriva evento notificable y gravedad desde `encounterDiagnosisUuid` y los
+El servidor deriva evento notificable y gravedad desde `diagnosisUuid` y los
 conceptos configurados; no acepta esos valores como campos del caso. Nombres, edad, sexo,
 residencia y etnia no se aceptan ni se copian: se leen desde `patient`. Gestación se
 registra como `Obs` del encuentro mediante el formulario clínico.
@@ -55,7 +55,7 @@ registra como `Obs` del encuentro mediante el formulario clínico.
   "encounterUuid": "uuid",
   "providerUuid": "uuid",
   "locationUuid": "uuid",
-  "encounterDiagnosisUuid": "uuid",
+  "diagnosisUuid": "uuid",
   "testOrderUuid": "uuid o null",
   "origin": "AUTOCTONO",
   "onsetDate": "2026-09-30",
@@ -71,7 +71,7 @@ registra como `Obs` del encuentro mediante el formulario clínico.
 ```
 
 Errores: 400 JSON malformado; 401 sesión ausente; 403 privilegio insuficiente; 404 una
-referencia no existe; 409 ya existe un caso para `encounterDiagnosisUuid`; 422 campos,
+referencia no existe; 409 ya existe un caso para `diagnosisUuid`; 422 campos,
 enumeraciones, fechas, residencia o centro poblado inválidos. Las respuestas 422 devuelven
 `{ "code": "...", "fields": ["..."] }` con mensajes accionables en el cliente.
 

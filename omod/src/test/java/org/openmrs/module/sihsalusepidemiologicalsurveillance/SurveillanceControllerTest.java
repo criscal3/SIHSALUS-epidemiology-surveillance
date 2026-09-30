@@ -45,7 +45,7 @@ public class SurveillanceControllerTest {
 		SurveillanceController controller = new SurveillanceController();
 		controller.setService(service);
 		SurveillanceCaseRequest request = new SurveillanceCaseRequest();
-		controller.createDraft(request);
+		assertEquals(201, controller.createDraft(request).getStatusCodeValue());
 		verify(service).createDraft(request);
 	}
 	
