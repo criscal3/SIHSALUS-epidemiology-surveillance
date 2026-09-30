@@ -1,5 +1,26 @@
 # Notas para Cristian
 
+## 2026-09-30 — plataforma para validación integrada local
+
+Docker Desktop está operativo. Existe un contenedor `mariadb` con imagen
+`mariadb:10.11.7`; no se ha consultado ni modificado su base de datos.
+La imagen local `ghcr.io/sihsalus/sihsalus-backend:latest`, identificador
+`sha256:d03384f0368052101bfb949c0de24547f6e5aaf7caedce874f1eb7c296711fe2`,
+contiene `WEB-INF/lib/openmrs-api-2.8.9.jar` en su WAR. Se inspeccionó mediante
+contenedores temporales sin red ni volúmenes del usuario, sin arrancar OpenMRS.
+
+Módulos presentes como archivos (no se ha comprobado que inicien):
+`fhir2-4.3.0-sihsalus.1`, `webservices.rest-3.5.0-sihsalus.1`,
+`addresshierarchy-2.21.0` y `sihsalusnotifications-1.2.0`. No apareció un OMOD de
+auditoría ni el de vigilancia en la carpeta de módulos de esa imagen.
+
+**Decisión pendiente:** validar compatibilidad contra esta distribución SIH.SALUS
+2.8.9 manteniendo el objetivo Maven 2.4.2, o preparar además una instancia específica
+2.4.2 con módulos compatibles. No se modificará `openmrsPlatformVersion` ni se
+arrancará una distribución distinta de la propuesta sin confirmar esta elección.
+La propuesta es usar primero 2.8.9 como entorno de integración, en una base nueva
+aislada; esto no certifica ejecución en 2.4.2. No se han ejecutado migraciones.
+
 ## 2026-09-30 — filtros de indicadores aprobados e implementados
 
 Se implementa `diagnosisType=CONFIRMADO|PROBABLE|TODOS`, predeterminado `CONFIRMADO`,
