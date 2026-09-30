@@ -13,7 +13,7 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.web.controller.Sur
 public class SurveillanceControllerTest {
 	
 	@Test
-	public void eventRoutesDispatchAndDeleteReturnsNoContent() throws Exception {
+	public void eventRoutesDispatchTheVersionedContract() throws Exception {
 		SurveillanceService service = mock(SurveillanceService.class);
 		SurveillanceController controller = new SurveillanceController();
 		controller.setService(service);
@@ -25,17 +25,14 @@ public class SurveillanceControllerTest {
 		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
 		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(base + "/events/event"))
 		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
-		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(base + "/events/event")
-		        .contentType("application/json").content("{\"name\":\"Updated\"}"))
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(base + "/events/event/valid-to")
+		        .contentType("application/json").content("{\"validTo\":\"2026-12-31\"}"))
 		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
-		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(base + "/events/event"))
-		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNoContent());
 		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(base + "/healthcheck"))
 		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
 		verify(service).getEvents(true);
 		verify(service).getEvent("event");
 		verify(service).updateEvent(eq("event"), anyMap());
-		verify(service).deleteEvent("event");
 		verify(service).healthcheck();
 	}
 	

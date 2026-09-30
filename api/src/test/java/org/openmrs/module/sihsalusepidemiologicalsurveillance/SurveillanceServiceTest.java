@@ -65,12 +65,36 @@ public class SurveillanceServiceTest {
 	}
 	
 	@Test
+	public void closingDraftRequiresOnlyTheRegisterPrivilegeBeforeValidation() {
+		SyntheticFixture f = new SyntheticFixture();
+		SurveillanceCase draft = new SurveillanceCase();
+		draft.setUuid(SyntheticFixture.uuid(99));
+		draft.setPatient(f.patient);
+		draft.setEncounter(f.source);
+		draft.setProvider(f.provider);
+		draft.setLocation(f.location);
+		draft.setDiagnosis(f.encounterDiagnosis);
+		when(f.dao.byUuid(SurveillanceCase.class, draft.getUuid())).thenReturn(draft);
+
+		try {
+			f.service.closeDraft(draft.getUuid());
+			fail();
+		}
+		catch (SurveillanceException ex) {
+			assertEquals("REQUIRED_FIELDS", ex.getCode());
+		}
+
+		verify(f.access).require(SurveillanceConstants.REGISTER);
+		verify(f.access, never()).require(SurveillanceConstants.VIEW);
+	}
+
+	@Test
 	public void registrationCompletesExistingEncounterDiagnosisAndAudit() {
 		SyntheticFixture f = new SyntheticFixture();
 		CaseResult result = f.service.registerCase(f.request);
 		assertEquals(f.source.getUuid(), result.uuid);
 		assertEquals("A90", result.icd10);
-		assertEquals("semanal", result.periodicity);
+		assertEquals("SEMANAL", result.periodicity);
 		ArgumentCaptor<Encounter> capture = ArgumentCaptor.forClass(Encounter.class);
 		verify(f.clinical).saveEncounter(capture.capture());
 		Encounter e = capture.getValue();

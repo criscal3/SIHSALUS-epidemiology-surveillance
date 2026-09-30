@@ -172,10 +172,12 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 	@Override
 	public SurveillanceCaseResponse closeDraft(String uuid) {
 		access.require(SurveillanceConstants.REGISTER);
-		SurveillanceCaseResponse result = getDraft(uuid);
+		SurveillanceCase value = dao.byUuid(SurveillanceCase.class, uuid);
+		if (value == null || value.isVoided())
+			throw new SurveillanceException(404, "CASE_NOT_FOUND");
+		SurveillanceCaseResponse result = response(value);
 		if (result.onsetDate == null || result.infectionAddressUuid == null)
 			throw new SurveillanceException(422, "REQUIRED_FIELDS", Arrays.asList("onsetDate", "infectionAddressUuid"));
-		SurveillanceCase value = dao.byUuid(SurveillanceCase.class, uuid);
 		if (!hasActiveIdentifier(value.getPatient()))
 			throw new SurveillanceException(422, "REQUIRED_FIELDS", Collections.singletonList("patientIdentifier"));
 		if (!hasActiveResidence(value.getPatient()))
