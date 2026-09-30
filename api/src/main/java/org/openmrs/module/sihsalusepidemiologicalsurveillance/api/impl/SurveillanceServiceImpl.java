@@ -123,19 +123,6 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 	}
 	
 	@Override
-	public void deleteEvent(String uuid) {
-		User actor = access.require(SurveillanceConstants.MANAGE);
-		NotifiableEvent event = requiredEvent(uuid);
-		dao.lockEvent(event);
-		if (!event.isRetired()) {
-			event.setValidTo(java.sql.Date.valueOf(java.time.LocalDate.now()));
-			event.setChangedBy(actor);
-			event.setDateChanged(new Date());
-			dao.save(event);
-		}
-	}
-	
-	@Override
 	public SurveillanceCaseResponse createDraft(SurveillanceCaseRequest request) {
 		User actor = access.require(SurveillanceConstants.REGISTER);
 		SurveillanceCase value = populate(new SurveillanceCase(), request, actor, false);
@@ -672,29 +659,6 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		}
 		dao.save(event);
 		return eventJson(event);
-	}
-	
-	@Override
-	public Map<String, Object> saveRule(Map<String, Object> body) {
-		User actor = access.require(SurveillanceConstants.MANAGE);
-		String uuid = string(body, "uuid"), eventUuid = string(body, "eventUuid"), type = string(body, "condition");
-		NotifiableEvent event = dao.byUuid(NotifiableEvent.class, eventUuid);
-		int window = body.containsKey("windowWeeks") ? number(body, "windowWeeks") : 2;
-		if (event == null || event.isRetired() || !Arrays.asList("EPIDEMIC", "SUSTAINED", "ELIMINATED_FOCUS").contains(type)
-		        || window < 2 || window > 12 || !(body.get("active") instanceof Boolean))
-			throw new SurveillanceException(422, "INVALID_OUTBREAK_RULE");
-		OutbreakAlertRule rule = dao.byUuid(OutbreakAlertRule.class, uuid);
-		if (rule == null) {
-			rule = new OutbreakAlertRule();
-			rule.setUuid(uuid);
-		}
-		rule.setEvent(event);
-		rule.setConditionType(type);
-		rule.setWindowWeeks("SUSTAINED".equals(type) ? window : null);
-		rule.setThreshold("EPIDEMIC".equals(type) ? 75d : "SUSTAINED".equals(type) ? 50d : null);
-		rule.setActive((Boolean) body.get("active"));
-		dao.save(rule);
-		return Collections.<String, Object> singletonMap("uuid", rule.getUuid());
 	}
 	
 	private String string(Map<String, Object> body, String key) {

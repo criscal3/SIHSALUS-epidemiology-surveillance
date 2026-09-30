@@ -32,9 +32,6 @@ public interface SurveillanceService extends OpenmrsService {
 	@Authorized(SurveillanceConstants.MANAGE)
 	Map<String, Object> updateEvent(String uuid, Map<String, Object> body);
 	
-	@Authorized(SurveillanceConstants.MANAGE)
-	void deleteEvent(String uuid);
-	
 	@Authorized(SurveillanceConstants.REGISTER)
 	@Transactional(isolation = Isolation.READ_COMMITTED)
 	CaseResult registerCase(CaseRequest request);
@@ -61,6 +58,4 @@ public interface SurveillanceService extends OpenmrsService {
 	@Authorized(SurveillanceConstants.MANAGE)
 	Map<String, Object> saveEvent(Map<String, Object> body);
 	
-	@Authorized(SurveillanceConstants.MANAGE)
-	Map<String, Object> saveRule(Map<String, Object> body);
 }

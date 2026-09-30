@@ -106,12 +106,6 @@ public class SurveillanceController {
 		return service().saveEvent(body);
 	}
 	
-	@RequestMapping(value = "/rules", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
-	@ResponseBody
-	public Map<String, Object> rule(@RequestBody Map<String, Object> body) {
-		return service().saveRule(body);
-	}
-	
 	@ExceptionHandler(SurveillanceException.class)
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> error(SurveillanceException error) {
