@@ -63,14 +63,34 @@ public class SurveillanceController {
 	
 	@RequestMapping(value = "/cases", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public CaseResult register(@RequestBody CaseRequest body) {
-		return service().registerCase(body);
+	public SurveillanceCaseResponse createDraft(@RequestBody SurveillanceCaseRequest body) {
+		return service().createDraft(body);
+	}
+	
+	@RequestMapping(value = "/cases/{uuid}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public SurveillanceCaseResponse updateDraft(@PathVariable("uuid") String uuid,
+	        @RequestBody SurveillanceCaseRequest body) {
+		return service().updateDraft(uuid, body);
+	}
+	
+	@RequestMapping(value = "/cases/{uuid}/close", method = RequestMethod.POST)
+	@ResponseBody
+	public SurveillanceCaseResponse closeDraft(@PathVariable("uuid") String uuid) {
+		return service().closeDraft(uuid);
 	}
 	
 	@RequestMapping(value = "/cases/{uuid}", method = RequestMethod.GET)
 	@ResponseBody
-	public CaseResult get(@PathVariable("uuid") String uuid) {
-		return service().getCase(uuid);
+	public SurveillanceCaseResponse get(@PathVariable("uuid") String uuid) {
+		return service().getDraft(uuid);
+	}
+	
+	@RequestMapping(value = "/addresses/{level}", method = RequestMethod.GET)
+	@ResponseBody
+	public Map<String, Object> addresses(@PathVariable("level") String level,
+	        @RequestParam(value = "parent", required = false) String parent) {
+		return Collections.<String, Object> singletonMap("results", service().addressChildren(level, parent));
 	}
 	
 	@RequestMapping(value = "/reports", method = RequestMethod.GET)

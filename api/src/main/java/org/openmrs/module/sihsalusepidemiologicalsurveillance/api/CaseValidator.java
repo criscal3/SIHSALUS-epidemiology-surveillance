@@ -11,8 +11,14 @@ public class CaseValidator {
 	
 	private ClinicalData clinical;
 	
+	private org.openmrs.module.sihsalusepidemiologicalsurveillance.api.db.SurveillanceDao dao;
+	
 	public void setClinical(ClinicalData value) {
 		clinical = value;
+	}
+	
+	public void setDao(org.openmrs.module.sihsalusepidemiologicalsurveillance.api.db.SurveillanceDao value) {
+		dao = value;
 	}
 	
 	public static class Validated {
@@ -45,9 +51,9 @@ public class CaseValidator {
 		if (r == null)
 			throw new SurveillanceException(422, "REQUIRED_FIELDS");
 		String[] values = { r.uuid, r.patientUuid, r.sourceEncounterUuid, r.providerUuid, r.locationUuid, r.eventUuid,
-		        r.status, r.severity, r.origin, r.onsetDate };
+		        r.status, r.origin, r.onsetDate };
 		String[] names = { "uuid", "patientUuid", "sourceEncounterUuid", "providerUuid", "locationUuid", "eventUuid",
-		        "status", "severity", "origin", "onsetDate" };
+		        "status", "origin", "onsetDate" };
 		for (int i = 0; i < values.length; i++)
 			if (!ClinicalCatalogService.present(values[i]))
 				missing.add(names[i]);
@@ -94,26 +100,40 @@ public class CaseValidator {
 		v.disease = ClinicalCatalogService.disease(m, r.eventUuid);
 		ClinicalCatalogService.choice(m.statuses, r.status);
 		ClinicalCatalogService.choice(m.origins, r.origin);
-		ClinicalCatalogService.choice(v.disease.severities, r.severity);
-		if (!v.disease.species.isEmpty())
+		if (v.disease != null && !v.disease.severities.isEmpty()) {
+			if (!ClinicalCatalogService.present(r.severity))
+				throw new SurveillanceException(422, "REQUIRED_FIELDS", Collections.singletonList("severity"));
+			ClinicalCatalogService.choice(v.disease.severities, r.severity);
+		}
+		if (v.disease != null && !v.disease.species.isEmpty())
 			ClinicalCatalogService.choice(v.disease.species, r.species);
 		else if (ClinicalCatalogService.present(r.species))
 			throw new SurveillanceException(422, "INVALID_CLASSIFICATION");
-		for (ClinicalCatalog.DiagnosisMapping mapping : v.disease.diagnoses)
-			if (Objects.equals(mapping.severity, r.severity) && Objects.equals(empty(mapping.species), empty(r.species))) {
-				v.diagnosis = clinical.concept(mapping.diagnosisConceptUuid);
-				v.icd10 = mapping.icd10Code;
-			}
-		if (v.diagnosis == null && "SEVERE".equals(r.severity))
+		if (v.disease != null && v.disease.diagnoses != null) {
 			for (ClinicalCatalog.DiagnosisMapping mapping : v.disease.diagnoses)
-				if ("SEVERE".equals(mapping.severity) && !ClinicalCatalogService.present(mapping.species)) {
+				if (Objects.equals(empty(mapping.severity), empty(r.severity))
+				        && Objects.equals(empty(mapping.species), empty(r.species))) {
 					v.diagnosis = clinical.concept(mapping.diagnosisConceptUuid);
 					v.icd10 = mapping.icd10Code;
 				}
+			if (v.diagnosis == null && "SEVERE".equals(r.severity))
+				for (ClinicalCatalog.DiagnosisMapping mapping : v.disease.diagnoses)
+					if ("SEVERE".equals(mapping.severity) && !ClinicalCatalogService.present(mapping.species)) {
+						v.diagnosis = clinical.concept(mapping.diagnosisConceptUuid);
+						v.icd10 = mapping.icd10Code;
+					}
+		}
+		if (v.diagnosis == null && dao != null) {
+			org.openmrs.module.sihsalusepidemiologicalsurveillance.model.NotifiableEvent event = dao
+			        .byUuid(org.openmrs.module.sihsalusepidemiologicalsurveillance.model.NotifiableEvent.class, r.eventUuid);
+			if (event != null && event.getConcept() != null) {
+				v.diagnosis = event.getConcept();
+			}
+		}
 		if (v.diagnosis == null || v.diagnosis.getRetired())
 			throw new SurveillanceException(422, "DIAGNOSIS_MAPPING_UNAVAILABLE");
 		if (!ClinicalCatalogService.present(v.icd10))
-			v.icd10 = ClinicalCatalogService.icd10(v.diagnosis, m);
+			v.icd10 = ClinicalCatalogService.icd10OrNull(v.diagnosis, m);
 		validateLab(r, m, v, calendar);
 		Obs pregnancy = CaseObservations.find(v.source, m.questions.get("pregnancy"));
 		if (pregnancy != null)
@@ -169,14 +189,38 @@ public class CaseValidator {
 		        || calendar.local(result.getObsDatetime()).isBefore(v.onset) || result.getObsDatetime().after(new Date()))
 			throw new SurveillanceException(422, "INVALID_LAB_RESULT");
 		String expected = null;
-		for (ClinicalCatalog.LabTest test : v.disease.laboratoryTests) {
-			if (test.resultConceptUuid.equals(result.getConcept().getUuid())
-			        && (result.getOrder() == null || result.getOrder().getConcept() == null || test.orderConceptUuid == null
-			                || test.orderConceptUuid.equals(result.getOrder().getConcept().getUuid()))) {
-				if (test.positiveAnswerUuids.contains(result.getValueCoded().getUuid()))
-					expected = "CONFIRMED";
-				if (test.negativeAnswerUuids.contains(result.getValueCoded().getUuid()))
+		if (v.disease != null && v.disease.laboratoryTests != null && !v.disease.laboratoryTests.isEmpty()) {
+			for (ClinicalCatalog.LabTest test : v.disease.laboratoryTests) {
+				if (test.resultConceptUuid.equals(result.getConcept().getUuid()) && (result.getOrder() == null
+				        || result.getOrder().getConcept() == null || test.orderConceptUuid == null
+				        || test.orderConceptUuid.equals(result.getOrder().getConcept().getUuid()))) {
+					if (test.positiveAnswerUuids.contains(result.getValueCoded().getUuid()))
+						expected = "CONFIRMED";
+					if (test.negativeAnswerUuids.contains(result.getValueCoded().getUuid()))
+						expected = "DISCARDED";
+				}
+			}
+		}
+		if (expected == null && result.getValueCoded() != null) {
+			String codedUuid = result.getValueCoded().getUuid();
+			if (Objects.equals(codedUuid, m.trueConceptUuid)) {
+				expected = "CONFIRMED";
+			} else if (Objects.equals(codedUuid, m.falseConceptUuid)) {
+				expected = "DISCARDED";
+			} else {
+				String text = "";
+				if (result.getValueCoded().getName() != null && result.getValueCoded().getName().getName() != null) {
+					text = result.getValueCoded().getName().getName().toLowerCase();
+				} else if (result.getValueCoded().getDisplayString() != null) {
+					text = result.getValueCoded().getDisplayString().toLowerCase();
+				}
+				if (text.contains("no reactiv") || text.contains("non-reactive") || text.contains("negativ")
+				        || text.contains("no detectad") || text.contains("ausent")) {
 					expected = "DISCARDED";
+				} else if (text.contains("reactiv") || text.contains("positiv") || text.contains("detectad")
+				        || text.contains("present")) {
+					expected = "CONFIRMED";
+				}
 			}
 		}
 		if (expected == null || !expected.equals(r.status))

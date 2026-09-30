@@ -45,8 +45,10 @@ public class CaseObservations {
 		result.status = choiceKey(m.statuses, coded(e, m, "status"));
 		result.origin = choiceKey(m.origins, coded(e, m, "origin"));
 		if (result.eventUuid != null) {
-			result.severity = choiceKey(ClinicalCatalogService.disease(m, result.eventUuid).severities,
-			    coded(e, m, "severity"));
+			ClinicalCatalog.Disease disease = ClinicalCatalogService.disease(m, result.eventUuid);
+			if (disease != null && disease.severities != null && !disease.severities.isEmpty()) {
+				result.severity = choiceKey(disease.severities, coded(e, m, "severity"));
+			}
 		}
 		Obs onset = find(e, m.questions.get("onset"));
 		if (onset != null && onset.getValueDatetime() != null)

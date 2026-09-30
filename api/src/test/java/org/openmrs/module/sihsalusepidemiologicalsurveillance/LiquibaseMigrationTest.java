@@ -22,13 +22,26 @@ public class LiquibaseMigrationTest {
 			try (Statement sql = connection.createStatement()) {
 				sql.execute("create table concept(concept_id int primary key, uuid varchar(38) unique)");
 				sql.execute("create table users(user_id int primary key)");
+				sql.execute("create table patient(patient_id int primary key)");
 				sql.execute("create table location(location_id int primary key)");
 				sql.execute("create table encounter(encounter_id int primary key)");
+				sql.execute("create table provider(provider_id int primary key)");
+				sql.execute("create table diagnosis(diagnosis_id int primary key)");
+				sql.execute("create table orders(order_id int primary key)");
+				sql.execute("create table address_hierarchy_entry(address_hierarchy_entry_id int primary key)");
 				sql.execute(
 				    "create table scheduler_task_config(task_config_id int auto_increment primary key, name varchar(255), description varchar(1024), schedulable_class varchar(1024), repeat_interval bigint, start_on_startup boolean, started boolean, uuid varchar(38) unique, created_by int)");
 				sql.execute("insert into concept values (1, 'synthetic-concept')");
 				sql.execute("insert into concept values (3, '41cb3fbf-f50c-4d7d-87bc-1b5dd963f8d0')");
 				sql.execute("insert into concept values (4, 'fae143be-b2c2-4d55-86de-09cf708911d6')");
+				sql.execute("insert into users values (1)");
+				sql.execute("insert into patient values (1)");
+				sql.execute("insert into location values (1)");
+				sql.execute("insert into encounter values (1)");
+				sql.execute("insert into provider values (1)");
+				sql.execute("insert into diagnosis values (1)");
+				sql.execute("insert into orders values (1)");
+				sql.execute("insert into address_hierarchy_entry values (1)");
 			}
 			Database database = DatabaseFactory.getInstance()
 			        .findCorrectDatabaseImplementation(new JdbcConnection(connection));
@@ -68,6 +81,10 @@ public class LiquibaseMigrationTest {
 				fails(sql,
 				    "insert into surveillance_period_case_count(uuid,event_id,period_type,calendar_year,period_number,case_count) values('duplicate',10,'semana',2026,1,3)");
 				fails(sql, "delete from surveillance_notifiable_event where event_id=10");
+				sql.execute(
+				    "insert into surveillance_case(surveillance_case_id,uuid,patient_id,encounter_id,provider_id,location_id,diagnosis_id,diagnosis_type,creator,date_created,voided) values(1,'case',1,1,1,1,1,'PROBABLE',1,CURRENT_TIMESTAMP,false)");
+				fails(sql,
+				    "insert into surveillance_case(surveillance_case_id,uuid,patient_id,encounter_id,provider_id,location_id,diagnosis_id,diagnosis_type,creator,date_created,voided) values(2,'same-diagnosis',1,1,1,1,1,'PROBABLE',1,CURRENT_TIMESTAMP,false)");
 			}
 		}
 	}

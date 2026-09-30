@@ -22,6 +22,14 @@ public class ClinicalData {
 		return Context.getEncounterService().getEncounterByUuid(uuid);
 	}
 	
+	public Diagnosis diagnosis(String uuid) {
+		return Context.getDiagnosisService().getDiagnosisByUuid(uuid);
+	}
+	
+	public Order order(String uuid) {
+		return Context.getOrderService().getOrderByUuid(uuid);
+	}
+	
 	public EncounterType encounterType(String uuid) {
 		return Context.getEncounterService().getEncounterTypeByUuid(uuid);
 	}

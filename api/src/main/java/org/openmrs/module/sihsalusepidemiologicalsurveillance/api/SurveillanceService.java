@@ -39,6 +39,16 @@ public interface SurveillanceService extends OpenmrsService {
 	@Transactional(isolation = Isolation.READ_COMMITTED)
 	CaseResult registerCase(CaseRequest request);
 	
+	SurveillanceCaseResponse createDraft(SurveillanceCaseRequest request);
+	
+	SurveillanceCaseResponse updateDraft(String uuid, SurveillanceCaseRequest request);
+	
+	SurveillanceCaseResponse getDraft(String uuid);
+	
+	SurveillanceCaseResponse closeDraft(String uuid);
+	
+	List<Map<String, Object>> addressChildren(String level, String parentUuid);
+	
 	@Authorized(SurveillanceConstants.VIEW)
 	CaseResult getCase(String uuid);
 	

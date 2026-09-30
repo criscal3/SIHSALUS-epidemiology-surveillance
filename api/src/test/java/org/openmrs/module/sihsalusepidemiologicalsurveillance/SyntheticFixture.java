@@ -46,9 +46,13 @@ class SyntheticFixture {
 	
 	final Concept diagnosis = concept(6);
 	
+	final Diagnosis encounterDiagnosis = new Diagnosis();
+	
 	final ClinicalCatalog.Disease disease = new ClinicalCatalog.Disease();
 	
 	final CaseRequest request = new CaseRequest();
+	
+	final SurveillanceCaseRequest surveillanceRequest = new SurveillanceCaseRequest();
 	
 	static String uuid(int number) {
 		return String.format("00000000-0000-4000-8000-%012d", number);
@@ -86,6 +90,7 @@ class SyntheticFixture {
 		source.setPatient(patient);
 		source.setVisit(visit);
 		source.setLocation(location);
+		source.setVoided(false);
 		source.setEncounterDatetime(new EpidemiologicalCalendar(m).date(LocalDate.of(2026, 1, 20)));
 		type.setUuid(uuid(11));
 		source.setEncounterType(type);
@@ -137,6 +142,11 @@ class SyntheticFixture {
 		when(clinical.encounter(source.getUuid())).thenReturn(source);
 		when(clinical.provider(provider.getUuid())).thenReturn(provider);
 		when(clinical.location(location.getUuid())).thenReturn(location);
+		encounterDiagnosis.setUuid(uuid(91));
+		encounterDiagnosis.setPatient(patient);
+		encounterDiagnosis.setEncounter(source);
+		encounterDiagnosis.setVoided(false);
+		when(clinical.diagnosis(encounterDiagnosis.getUuid())).thenReturn(encounterDiagnosis);
 		when(clinical.concept(diagnosis.getUuid())).thenReturn(diagnosis);
 		when(clinical.encounterType(type.getUuid())).thenReturn(type);
 		when(clinical.encounterRole(role.getUuid())).thenReturn(role);
@@ -155,6 +165,7 @@ class SyntheticFixture {
 		when(resolver.get()).thenReturn(m);
 		when(access.require(anyString())).thenReturn(actor);
 		validator.setClinical(clinical);
+		validator.setDao(dao);
 		service.setClinical(clinical);
 		service.setDao(dao);
 		service.setCatalog(resolver);
@@ -170,6 +181,19 @@ class SyntheticFixture {
 		request.severity = "MILD";
 		request.origin = "AUTOCHTHONOUS";
 		request.onsetDate = "2026-01-19";
+		surveillanceRequest.patientUuid = patient.getUuid();
+		surveillanceRequest.encounterUuid = source.getUuid();
+		surveillanceRequest.providerUuid = provider.getUuid();
+		surveillanceRequest.locationUuid = location.getUuid();
+		surveillanceRequest.diagnosisUuid = encounterDiagnosis.getUuid();
+		surveillanceRequest.diagnosisType = "PROBABLE";
+		surveillanceRequest.origin = "AUTOCTONO";
+		surveillanceRequest.onsetDate = "2026-01-19";
+		surveillanceRequest.vaccinationStatus = "IGN";
+		surveillanceRequest.investigationDate = "2026-01-20";
+		surveillanceRequest.notificationDate = "2026-01-21";
+		surveillanceRequest.deathDate = "2026-01-22";
+		surveillanceRequest.surveillanceType = "PASIVA";
 	}
 	
 	private void add(List<ClinicalCatalog.Choice> choices, String key, int id) {

@@ -40,13 +40,13 @@ public class SurveillanceControllerTest {
 	}
 	
 	@Test
-	public void delegatesWritesToProtectedService() {
+	public void delegatesDraftCreationToProtectedService() {
 		SurveillanceService service = mock(SurveillanceService.class);
 		SurveillanceController controller = new SurveillanceController();
 		controller.setService(service);
-		CaseRequest request = new CaseRequest();
-		controller.register(request);
-		verify(service).registerCase(request);
+		SurveillanceCaseRequest request = new SurveillanceCaseRequest();
+		controller.createDraft(request);
+		verify(service).createDraft(request);
 	}
 	
 	@Test

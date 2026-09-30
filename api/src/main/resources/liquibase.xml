@@ -30,4 +30,5 @@
     <include file="liquibase-scheduler.xml"/>
  
     <include file="liquibase-english-entities.xml"/>
+    <include file="liquibase-surveillance-case.xml"/>
 </databaseChangeLog>

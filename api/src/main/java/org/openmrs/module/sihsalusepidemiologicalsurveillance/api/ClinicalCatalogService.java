@@ -31,10 +31,12 @@ public class ClinicalCatalogService {
 	}
 	
 	public static ClinicalCatalog.Disease disease(ClinicalCatalog m, String uuid) {
+		if (m == null || m.diseases == null || uuid == null)
+			return null;
 		for (ClinicalCatalog.Disease disease : m.diseases)
 			if (Objects.equals(disease.eventUuid, uuid))
 				return disease;
-		throw new SurveillanceException(422, "INVALID_EVENT");
+		return null;
 	}
 	
 	public static String icd10(Concept concept, ClinicalCatalog m) {
@@ -48,6 +50,20 @@ public class ClinicalCatalogService {
 		if (codes.size() != 1)
 			throw new SurveillanceException(503, "ICD10_MAPPING_UNAVAILABLE");
 		return codes.iterator().next();
+	}
+	
+	/**
+	 * Like {@link #icd10} but returns {@code null} when no unique ICD10 code is found (dynamic events).
+	 */
+	public static String icd10OrNull(Concept concept, ClinicalCatalog m) {
+		Set<String> codes = new HashSet<String>();
+		for (ConceptMap map : concept.getConceptMappings()) {
+			ConceptReferenceTerm term = map.getConceptReferenceTerm();
+			if (term != null && !term.getRetired() && term.getConceptSource() != null
+			        && m.icd10SourceUuid.equals(term.getConceptSource().getUuid()))
+				codes.add(term.getCode());
+		}
+		return codes.size() == 1 ? codes.iterator().next() : null;
 	}
 	
 	public static String diagnosisCode(ClinicalCatalog m, Concept concept) {

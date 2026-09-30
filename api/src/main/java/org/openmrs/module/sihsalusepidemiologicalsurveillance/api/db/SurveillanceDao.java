@@ -33,4 +33,12 @@ public interface SurveillanceDao {
 	List<Encounter> encounters(Date from, Date to, String onsetConceptUuid);
 	
 	List<Encounter> possibleDuplicates(Patient patient, List<String> diagnoses, Date from, Date to, String onsetConceptUuid);
+	
+	Integer populatedCenterId(String uuid);
+	
+	SurveillanceCase caseByDiagnosis(org.openmrs.Diagnosis diagnosis);
+	
+	String addressUuid(Integer id);
+	
+	List<Object[]> addressChildren(String addressField, String parentUuid);
 }

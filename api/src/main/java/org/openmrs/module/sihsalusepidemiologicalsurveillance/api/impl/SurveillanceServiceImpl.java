@@ -136,6 +136,206 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 	}
 	
 	@Override
+	public SurveillanceCaseResponse createDraft(SurveillanceCaseRequest request) {
+		User actor = access.require(SurveillanceConstants.REGISTER);
+		SurveillanceCase value = populate(new SurveillanceCase(), request, actor, false);
+		value.setCreator(actor);
+		value.setDateCreated(new Date());
+		dao.save(value);
+		return response(value);
+	}
+	
+	@Override
+	public SurveillanceCaseResponse updateDraft(String uuid, SurveillanceCaseRequest request) {
+		User actor = access.require(SurveillanceConstants.REGISTER);
+		SurveillanceCase value = dao.byUuid(SurveillanceCase.class, uuid);
+		if (value == null || value.isVoided())
+			throw new SurveillanceException(404, "CASE_NOT_FOUND");
+		populate(value, request, actor, false);
+		value.setChangedBy(actor);
+		value.setDateChanged(new Date());
+		dao.save(value);
+		return response(value);
+	}
+	
+	@Override
+	public SurveillanceCaseResponse getDraft(String uuid) {
+		access.require(SurveillanceConstants.VIEW);
+		SurveillanceCase value = dao.byUuid(SurveillanceCase.class, uuid);
+		if (value == null || value.isVoided())
+			throw new SurveillanceException(404, "CASE_NOT_FOUND");
+		return response(value);
+	}
+	
+	@Override
+	public SurveillanceCaseResponse closeDraft(String uuid) {
+		access.require(SurveillanceConstants.REGISTER);
+		SurveillanceCaseResponse result = getDraft(uuid);
+		if (result.onsetDate == null || result.infectionAddressUuid == null)
+			throw new SurveillanceException(422, "REQUIRED_FIELDS", Arrays.asList("onsetDate", "infectionAddressUuid"));
+		SurveillanceCase value = dao.byUuid(SurveillanceCase.class, uuid);
+		if (!hasActiveIdentifier(value.getPatient()))
+			throw new SurveillanceException(422, "REQUIRED_FIELDS", Collections.singletonList("patientIdentifier"));
+		if (!hasActiveResidence(value.getPatient()))
+			throw new SurveillanceException(422, "REQUIRED_FIELDS", Collections.singletonList("patientResidence"));
+		return result;
+	}
+	
+	private boolean hasActiveIdentifier(Patient patient) {
+		for (PatientIdentifier identifier : patient.getIdentifiers())
+			if (!identifier.isVoided() && ClinicalCatalogService.present(identifier.getIdentifier()))
+				return true;
+		return false;
+	}
+	
+	private boolean hasActiveResidence(Patient patient) {
+		if (patient.getPerson().getAddresses() == null)
+			return false;
+		for (PersonAddress address : patient.getPerson().getAddresses())
+			if (!address.isVoided())
+				return true;
+		return false;
+	}
+	
+	@Override
+	public List<Map<String, Object>> addressChildren(String level, String parentUuid) {
+		access.require(SurveillanceConstants.VIEW);
+		String field = "provinces".equals(level) ? "STATE_PROVINCE"
+		        : "districts".equals(level) ? "COUNTY_DISTRICT" : "populated-centers".equals(level) ? "CITY_VILLAGE" : null;
+		if (field == null)
+			throw new SurveillanceException(422, "INVALID_ADDRESS_LEVEL");
+		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+		for (Object[] row : dao.addressChildren(field, parentUuid)) {
+			Map<String, Object> item = new LinkedHashMap<String, Object>();
+			item.put("uuid", row[0]);
+			item.put("display", row[1]);
+			result.add(item);
+		}
+		return result;
+	}
+	
+	private SurveillanceCase populate(SurveillanceCase value, SurveillanceCaseRequest request, User actor, boolean closing) {
+		if (request == null || !ClinicalCatalogService.present(request.patientUuid)
+		        || !ClinicalCatalogService.present(request.encounterUuid)
+		        || !ClinicalCatalogService.present(request.providerUuid)
+		        || !ClinicalCatalogService.present(request.locationUuid)
+		        || !ClinicalCatalogService.present(request.diagnosisUuid)
+		        || !ClinicalCatalogService.present(request.diagnosisType))
+			throw new SurveillanceException(422, "REQUIRED_FIELDS");
+		Patient patient = clinical.patient(request.patientUuid);
+		Encounter encounter = clinical.encounter(request.encounterUuid);
+		Provider provider = clinical.provider(request.providerUuid);
+		Location location = clinical.location(request.locationUuid);
+		Diagnosis diagnosis = clinical.diagnosis(request.diagnosisUuid);
+		if (patient == null || patient.getVoided() || encounter == null || encounter.getVoided() || provider == null
+		        || provider.getRetired() || location == null || location.getRetired() || diagnosis == null
+		        || diagnosis.getVoided() || !patient.equals(encounter.getPatient())
+		        || !encounter.equals(diagnosis.getEncounter()) || !location.equals(encounter.getLocation())
+		        || provider.getPerson() == null || !provider.getPerson().equals(actor.getPerson()))
+			throw new SurveillanceException(422, "INVALID_REFERENCE");
+		SurveillanceCase existing = dao.caseByDiagnosis(diagnosis);
+		if (existing != null && !existing.equals(value))
+			throw new SurveillanceException(409, "CASE_ALREADY_EXISTS_FOR_DIAGNOSIS",
+			        Collections.singletonList("diagnosisUuid"));
+		if (!Arrays.asList("CONFIRMADO", "PROBABLE", "DESCARTADO").contains(request.diagnosisType))
+			throw new SurveillanceException(422, "INVALID_CLASSIFICATION", Collections.singletonList("diagnosisType"));
+		request.origin = normalizeOrigin(request.origin);
+		if (request.origin != null
+		        && !Arrays.asList("AUTOCTONO", "IMPORTADO_NACIONAL", "IMPORTADO_INTERNACIONAL", "INDUCIDO", "INTRODUCIDO",
+		            "RECAIDA", "RECRUDESCENCIA").contains(request.origin)
+		        || request.vaccinationStatus != null && !Arrays.asList("SI", "NO", "IGN").contains(request.vaccinationStatus)
+		        || request.surveillanceType != null
+		                && !Arrays.asList("PASIVA", "BUSQUEDA_ACTIVA").contains(request.surveillanceType))
+			throw new SurveillanceException(422, "INVALID_CLASSIFICATION");
+		value.setPatient(patient);
+		value.setEncounter(encounter);
+		value.setProvider(provider);
+		value.setLocation(location);
+		value.setDiagnosis(diagnosis);
+		value.setDiagnosisType(request.diagnosisType);
+		value.setOrigin(request.origin);
+		value.setVaccinationStatus(request.vaccinationStatus);
+		value.setSurveillanceType(request.surveillanceType);
+		if (ClinicalCatalogService.present(request.infectionAddressUuid)) {
+			Integer addressId = dao.populatedCenterId(request.infectionAddressUuid);
+			if (addressId == null)
+				throw new SurveillanceException(422, "INVALID_INFECTION_ADDRESS",
+				        Collections.singletonList("infectionAddressUuid"));
+			value.setInfectionAddress(addressId);
+		} else
+			value.setInfectionAddress(null);
+		Order testOrder = ClinicalCatalogService.present(request.testOrderUuid) ? clinical.order(request.testOrderUuid)
+		        : null;
+		if (ClinicalCatalogService.present(request.testOrderUuid) && (testOrder == null || testOrder.isVoided()))
+			throw new SurveillanceException(422, "INVALID_LAB_RESULT", Collections.singletonList("testOrderUuid"));
+		if (testOrder == null && ClinicalCatalogService.present(request.laboratoryObservationUuid)) {
+			Obs observation = clinical.observation(request.laboratoryObservationUuid);
+			if (observation == null || observation.getVoided())
+				throw new SurveillanceException(422, "INVALID_LAB_RESULT");
+			testOrder = observation.getOrder();
+		}
+		value.setTestOrder(testOrder);
+		value.setOnsetDate(date(request.onsetDate));
+		value.setInvestigationDate(date(request.investigationDate));
+		value.setNotificationDate(date(request.notificationDate));
+		value.setDeathDate(date(request.deathDate));
+		validateDates(value);
+		return value;
+	}
+	
+	private String normalizeOrigin(String value) {
+		if ("AUTOCHTHONOUS".equals(value))
+			return "AUTOCTONO";
+		if ("IMPORTED_NATIONAL".equals(value))
+			return "IMPORTADO_NACIONAL";
+		if ("IMPORTED_INTERNATIONAL".equals(value))
+			return "IMPORTADO_INTERNACIONAL";
+		return value;
+	}
+	
+	private void validateDates(SurveillanceCase value) {
+		if (value.getOnsetDate() != null && value.getInvestigationDate() != null
+		        && value.getOnsetDate().after(value.getInvestigationDate())
+		        || value.getOnsetDate() != null && value.getNotificationDate() != null
+		                && value.getOnsetDate().after(value.getNotificationDate())
+		        || value.getOnsetDate() != null && value.getDeathDate() != null
+		                && value.getDeathDate().before(value.getOnsetDate()))
+			throw new SurveillanceException(422, "INVALID_DATE_RANGE");
+	}
+	
+	private Date date(String value) {
+		if (!ClinicalCatalogService.present(value))
+			return null;
+		try {
+			return java.sql.Date.valueOf(value);
+		}
+		catch (IllegalArgumentException ex) {
+			throw new SurveillanceException(422, "INVALID_DATE", Collections.singletonList(value));
+		}
+	}
+	
+	private SurveillanceCaseResponse response(SurveillanceCase value) {
+		SurveillanceCaseResponse r = new SurveillanceCaseResponse();
+		r.uuid = value.getUuid();
+		r.patientUuid = value.getPatient().getUuid();
+		r.encounterUuid = value.getEncounter().getUuid();
+		r.providerUuid = value.getProvider().getUuid();
+		r.locationUuid = value.getLocation().getUuid();
+		r.diagnosisUuid = value.getDiagnosis().getUuid();
+		r.testOrderUuid = value.getTestOrder() == null ? null : value.getTestOrder().getUuid();
+		r.origin = value.getOrigin();
+		r.diagnosisType = value.getDiagnosisType();
+		r.vaccinationStatus = value.getVaccinationStatus();
+		r.surveillanceType = value.getSurveillanceType();
+		r.infectionAddressUuid = value.getInfectionAddress() == null ? null : dao.addressUuid(value.getInfectionAddress());
+		r.onsetDate = value.getOnsetDate() == null ? null : value.getOnsetDate().toString();
+		r.investigationDate = value.getInvestigationDate() == null ? null : value.getInvestigationDate().toString();
+		r.notificationDate = value.getNotificationDate() == null ? null : value.getNotificationDate().toString();
+		r.deathDate = value.getDeathDate() == null ? null : value.getDeathDate().toString();
+		return r;
+	}
+	
+	@Override
 	public CaseResult registerCase(CaseRequest request) {
 		User actor = access.require(SurveillanceConstants.REGISTER);
 		access.require(SurveillanceConstants.VIEW);
@@ -163,10 +363,15 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		CaseValidator.Validated v = validator.validate(request, m, actor);
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
 		List<String> diagnoses = new ArrayList<String>();
-		for (ClinicalCatalog.DiagnosisMapping mapping : v.disease.diagnoses)
-			diagnoses.add(mapping.diagnosisConceptUuid);
-		if (!dao.possibleDuplicates(v.patient, diagnoses, calendar.date(v.onset.minusDays(m.duplicateWindowDays)),
-		    calendar.date(v.onset.plusDays(m.duplicateWindowDays + 1)), m.questions.get("onset")).isEmpty())
+		if (v.disease != null && v.disease.diagnoses != null && !v.disease.diagnoses.isEmpty()) {
+			for (ClinicalCatalog.DiagnosisMapping mapping : v.disease.diagnoses)
+				diagnoses.add(mapping.diagnosisConceptUuid);
+		} else if (v.diagnosis != null) {
+			diagnoses.add(v.diagnosis.getUuid());
+		}
+		if (!diagnoses.isEmpty()
+		        && !dao.possibleDuplicates(v.patient, diagnoses, calendar.date(v.onset.minusDays(m.duplicateWindowDays)),
+		            calendar.date(v.onset.plusDays(m.duplicateWindowDays + 1)), m.questions.get("onset")).isEmpty())
 			throw new SurveillanceException(409, "POSSIBLE_DUPLICATE",
 			        Arrays.asList("patientUuid", "eventUuid", "onsetDate"));
 		NotifiableEvent event = dao.byUuid(NotifiableEvent.class, request.eventUuid);
@@ -182,9 +387,10 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		    clinical.concept(ClinicalCatalogService.choice(m.statuses, request.status).conceptUuid));
 		coded(encounter, m, "origin",
 		    clinical.concept(ClinicalCatalogService.choice(m.origins, request.origin).conceptUuid));
-		coded(encounter, m, "severity",
-		    clinical.concept(ClinicalCatalogService.choice(v.disease.severities, request.severity).conceptUuid));
-		if (!v.disease.species.isEmpty())
+		if (v.disease != null && !v.disease.severities.isEmpty() && ClinicalCatalogService.present(request.severity))
+			coded(encounter, m, "severity",
+			    clinical.concept(ClinicalCatalogService.choice(v.disease.severities, request.severity).conceptUuid));
+		if (v.disease != null && !v.disease.species.isEmpty() && ClinicalCatalogService.present(request.species))
 			coded(encounter, m, "species",
 			    clinical.concept(ClinicalCatalogService.choice(v.disease.species, request.species).conceptUuid));
 		Obs onset = obs(encounter, m, "onset");
@@ -228,6 +434,8 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		audit(actor, "registro", "encounter", encounter.getId());
 		if (!result.immediateAlerts.isEmpty() || !result.outbreakAlerts.isEmpty())
 			clinical.alert(actor, "Vigilancia epidemiologica: revisar alertas del registro " + encounter.getUuid());
+		if ("CONFIRMED".equals(request.status))
+			refreshCountsForEvent(event, m);
 		return result;
 	}
 	
@@ -251,21 +459,30 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		CaseResult result = new CaseResult();
 		result.uuid = encounter.getUuid();
 		ClinicalCatalog.Disease disease = ClinicalCatalogService.disease(m, record.eventUuid);
-		String species = CaseObservations.choiceKey(disease.species, CaseObservations.coded(encounter, m, "species"));
-		ClinicalCatalog.DiagnosisMapping selected = null;
-		for (ClinicalCatalog.DiagnosisMapping mapping : disease.diagnoses)
-			if (Objects.equals(mapping.severity, record.severity) && Objects.equals(mapping.species, species)) {
-				selected = mapping;
-				break;
-			}
-		if (selected == null && "SEVERE".equals(record.severity))
+		if (disease != null) {
+			String species = CaseObservations.choiceKey(disease.species, CaseObservations.coded(encounter, m, "species"));
+			ClinicalCatalog.DiagnosisMapping selected = null;
 			for (ClinicalCatalog.DiagnosisMapping mapping : disease.diagnoses)
-				if ("SEVERE".equals(mapping.severity) && mapping.species == null)
+				if (Objects.equals(mapping.severity, record.severity) && Objects.equals(mapping.species, species)) {
 					selected = mapping;
-		if (selected == null)
-			throw new SurveillanceException(422, "INVALID_CASE_DATA");
-		result.diagnosisConceptUuid = selected.diagnosisConceptUuid;
-		result.icd10 = selected.icd10Code;
+					break;
+				}
+			if (selected == null && "SEVERE".equals(record.severity))
+				for (ClinicalCatalog.DiagnosisMapping mapping : disease.diagnoses)
+					if ("SEVERE".equals(mapping.severity) && mapping.species == null)
+						selected = mapping;
+			if (selected == null)
+				throw new SurveillanceException(422, "INVALID_CASE_DATA");
+			result.diagnosisConceptUuid = selected.diagnosisConceptUuid;
+			result.icd10 = selected.icd10Code;
+		} else {
+			// Dynamic event not in the static catalog: use the event concept as diagnosis.
+			org.openmrs.Concept concept = event.getConcept();
+			if (concept == null || concept.getRetired())
+				throw new SurveillanceException(422, "INVALID_CASE_DATA");
+			result.diagnosisConceptUuid = concept.getUuid();
+			result.icd10 = ClinicalCatalogService.icd10OrNull(concept, m);
+		}
 		result.periodicity = event.getPeriodicity();
 		result.deadlineDays = event.getDeadlineDays();
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
@@ -287,7 +504,6 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 	public SurveillanceReport report(String eventUuid, String from, String to, String period) {
 		User actor = access.require(SurveillanceConstants.REPORT);
 		ClinicalCatalog m = catalog.get();
-		ClinicalCatalogService.disease(m, eventUuid);
 		NotifiableEvent event = dao.byUuid(NotifiableEvent.class, eventUuid);
 		if (event == null)
 			throw new SurveillanceException(404, "EVENT_NOT_FOUND");
@@ -322,6 +538,21 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		List<CaseRecord> records = records(m, start, today.plusDays(1), eventConcepts());
 		for (NotifiableEvent event : dao.events())
 			dao.replaceCounts(event, calculator.aggregate(event, records, m, today));
+	}
+	
+	/** Called internally (within the REGISTER transaction) to refresh counts for a single event. */
+	private void refreshCountsForEvent(NotifiableEvent event, ClinicalCatalog m) {
+		try {
+			EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
+			LocalDate start = LocalDate.parse(m.surveillanceStartDate), today = calendar.today();
+			List<CaseRecord> records = records(m, start, today.plusDays(1), eventConcepts());
+			dao.replaceCounts(event, calculator.aggregate(event, records, m, today));
+		}
+		catch (Exception ex) {
+			// Count refresh is best-effort; a failure must not roll back case registration.
+			org.apache.commons.logging.LogFactory.getLog(getClass())
+			        .warn("refreshCountsForEvent failed for event " + event.getUuid(), ex);
+		}
 	}
 	
 	private List<CaseRecord> records(ClinicalCatalog m, LocalDate from, LocalDate until, Map<String, String> events) {

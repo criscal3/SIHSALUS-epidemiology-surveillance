@@ -114,4 +114,38 @@ public class HibernateSurveillanceDao implements SurveillanceDao {
 		        .setParameter("patient", patient).setParameterList("diagnoses", diagnoses).setString("onset", onset)
 		        .setTimestamp("from", from).setTimestamp("to", to).list();
 	}
+	
+	@Override
+	public Integer populatedCenterId(String uuid) {
+		Object value = sessionFactory.getCurrentSession().createSQLQuery(
+		    "select e.address_hierarchy_entry_id from address_hierarchy_entry e join address_hierarchy_level l on l.address_hierarchy_level_id = e.level_id where e.uuid = :uuid and l.address_field = 'CITY_VILLAGE'")
+		        .setString("uuid", uuid).uniqueResult();
+		return value == null ? null : ((Number) value).intValue();
+	}
+	
+	@Override
+	public SurveillanceCase caseByDiagnosis(org.openmrs.Diagnosis diagnosis) {
+		return (SurveillanceCase) sessionFactory.getCurrentSession().createCriteria(SurveillanceCase.class)
+		        .add(Restrictions.eq("diagnosis", diagnosis)).add(Restrictions.eq("voided", false)).uniqueResult();
+	}
+	
+	@Override
+	public String addressUuid(Integer id) {
+		Object value = sessionFactory.getCurrentSession()
+		        .createSQLQuery("select uuid from address_hierarchy_entry where address_hierarchy_entry_id = :id")
+		        .setInteger("id", id).uniqueResult();
+		return value == null ? null : value.toString();
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	public List<Object[]> addressChildren(String field, String parentUuid) {
+		String sql = "select e.uuid, e.name from address_hierarchy_entry e join address_hierarchy_level l on l.address_hierarchy_level_id = e.level_id "
+		        + "left join address_hierarchy_entry p on p.address_hierarchy_entry_id = e.parent_id where l.address_field = :field "
+		        + (parentUuid == null ? "and e.parent_id is null " : "and p.uuid = :parent ") + "order by e.name";
+		org.hibernate.Query query = sessionFactory.getCurrentSession().createSQLQuery(sql).setString("field", field);
+		if (parentUuid != null)
+			query.setString("parent", parentUuid);
+		return query.list();
+	}
 }

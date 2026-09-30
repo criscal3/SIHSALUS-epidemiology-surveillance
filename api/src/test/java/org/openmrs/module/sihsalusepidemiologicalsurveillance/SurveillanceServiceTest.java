@@ -15,6 +15,47 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.*;
 public class SurveillanceServiceTest {
 	
 	@Test
+	public void draftPersistsEveryCaseAttributeAndLeavesIndividualRecordUnset() {
+		SyntheticFixture f = new SyntheticFixture();
+		f.surveillanceRequest.infectionAddressUuid = SyntheticFixture.uuid(92);
+		when(f.dao.populatedCenterId(f.surveillanceRequest.infectionAddressUuid)).thenReturn(92);
+		
+		f.service.createDraft(f.surveillanceRequest);
+		
+		ArgumentCaptor<SurveillanceCase> capture = ArgumentCaptor.forClass(SurveillanceCase.class);
+		verify(f.dao).save(capture.capture());
+		SurveillanceCase saved = capture.getValue();
+		assertSame(f.patient, saved.getPatient());
+		assertSame(f.source, saved.getEncounter());
+		assertSame(f.provider, saved.getProvider());
+		assertSame(f.location, saved.getLocation());
+		assertSame(f.encounterDiagnosis, saved.getDiagnosis());
+		assertEquals(Integer.valueOf(92), saved.getInfectionAddress());
+		assertEquals("AUTOCTONO", saved.getOrigin());
+		assertEquals("PROBABLE", saved.getDiagnosisType());
+		assertEquals("IGN", saved.getVaccinationStatus());
+		assertEquals("PASIVA", saved.getSurveillanceType());
+		assertNull(saved.getIndividualRecord());
+	}
+	
+	@Test
+	public void draftRejectsASecondCaseForTheSameDiagnosis() {
+		SyntheticFixture f = new SyntheticFixture();
+		SurveillanceCase existing = new SurveillanceCase();
+		when(f.dao.caseByDiagnosis(f.encounterDiagnosis)).thenReturn(existing);
+		
+		try {
+			f.service.createDraft(f.surveillanceRequest);
+			fail();
+		}
+		catch (SurveillanceException ex) {
+			assertEquals(409, ex.getStatus());
+			assertEquals("CASE_ALREADY_EXISTS_FOR_DIAGNOSIS", ex.getCode());
+		}
+		verify(f.dao, never()).save(any(SurveillanceCase.class));
+	}
+	
+	@Test
 	public void registrationCompletesExistingEncounterDiagnosisAndAudit() {
 		SyntheticFixture f = new SyntheticFixture();
 		CaseResult result = f.service.registerCase(f.request);
@@ -147,5 +188,32 @@ public class SurveillanceServiceTest {
 		f.m.surveillanceStartDate = "2026-01-01";
 		f.service.refreshCounts();
 		verify(f.dao).replaceCounts(eq(f.event), argThat(counts -> !counts.isEmpty()));
+	}
+	
+	@Test
+	public void confirmedRegistrationTriggersCountRefreshForThatEvent() {
+		SyntheticFixture f = new SyntheticFixture();
+		f.m.surveillanceStartDate = "2026-01-01";
+		f.lab(true);
+		f.request.status = "CONFIRMED";
+		f.service.registerCase(f.request);
+		verify(f.dao).replaceCounts(eq(f.event), argThat(counts -> !counts.isEmpty()));
+	}
+	
+	@Test
+	public void suspectedRegistrationDoesNotTriggerCountRefresh() {
+		SyntheticFixture f = new SyntheticFixture();
+		f.m.surveillanceStartDate = "2026-01-01";
+		f.service.registerCase(f.request); // status = SUSPECTED by default
+		verify(f.dao, never()).replaceCounts(any(), anyList());
+	}
+	
+	@Test
+	public void dynamicEventWithoutStaticDiseaseUsesEventConceptAsDiagnosis() {
+		SyntheticFixture f = new SyntheticFixture();
+		// Remove disease from catalog so it's purely dynamic
+		f.m.diseases.clear();
+		CaseResult result = f.service.registerCase(f.request);
+		assertEquals(f.event.getConcept().getUuid(), result.diagnosisConceptUuid);
 	}
 }
