@@ -36,6 +36,15 @@ public class SurveillanceServiceTest {
 		assertEquals("IGN", saved.getVaccinationStatus());
 		assertEquals("PASIVA", saved.getSurveillanceType());
 		assertNull(saved.getIndividualRecord());
+		verify(f.dao).replaceCounts(eq(f.event), anyList());
+	}
+	
+	@Test
+	public void discardedDraftDoesNotTriggerCountRecalculation() {
+		SyntheticFixture f = new SyntheticFixture();
+		f.surveillanceRequest.diagnosisType = "DESCARTADO";
+		f.service.createDraft(f.surveillanceRequest);
+		verify(f.dao, never()).replaceCounts(any(NotifiableEvent.class), anyList());
 	}
 	
 	@Test

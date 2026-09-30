@@ -141,6 +141,7 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		value.setCreator(actor);
 		value.setDateCreated(new Date());
 		dao.save(value);
+		refreshCountsAfterCaseSave(value, actor);
 		return response(value);
 	}
 	
@@ -154,6 +155,7 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		value.setChangedBy(actor);
 		value.setDateChanged(new Date());
 		dao.save(value);
+		refreshCountsAfterCaseSave(value, actor);
 		return response(value);
 	}
 	
@@ -528,6 +530,15 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 	@Override
 	public void refreshCounts() {
 		User actor = access.require(SurveillanceConstants.MANAGE);
+		refreshCounts(actor);
+	}
+	
+	private void refreshCountsAfterCaseSave(SurveillanceCase value, User actor) {
+		if ("CONFIRMADO".equals(value.getDiagnosisType()) || "PROBABLE".equals(value.getDiagnosisType()))
+			refreshCounts(actor);
+	}
+	
+	private void refreshCounts(User actor) {
 		ClinicalCatalog m = catalog.get();
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
 		List<SurveillanceCase> cases = dao.surveillanceCases();
