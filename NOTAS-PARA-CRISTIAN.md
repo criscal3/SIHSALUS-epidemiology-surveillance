@@ -1,5 +1,24 @@
 # Notas para Cristian
 
+## 2026-09-30 — corrección del destino físico de Diagnosis
+
+Se rectifica la interpretación anterior: la clase Java `org.openmrs.Diagnosis`
+está mapeada a `encounter_diagnosis`, PK `diagnosis_id`, tanto en los JAR locales
+2.4.2 como 2.8.9. La inexistencia de una clase `EncounterDiagnosis` no implica
+inexistencia de esa tabla. La excepción anotada más abajo hacia `diagnosis` no aplica.
+
+El log aportado confirma que el changeset 13 terminó y el 14 falló al añadir
+`sc_diagnosis_fk` contra la tabla equivocada, después de crear las siete tablas.
+Cristian autorizó resolver solo la primera parte: corregir el OMOD y su prueba.
+Se cambia únicamente el destino de esa FK en el changeset 14 fallido; no se modifica
+el 13 ni se cambia la columna local `surveillance_case.diagnosis_id` o la clase Java.
+No se ha ejecutado SQL de recuperación ni marcado ningún changeset como aplicado.
+
+La instancia parcialmente migrada no queda reparada por instalar este artefacto:
+continúa pendiente la recuperación coordinada con su administrador. Si otra base
+registró el 14 como completado, requiere analizar su historial y una migración
+específica; no borrar checksums ni utilizar `MARK_RAN` para saltar restricciones.
+
 ## 2026-09-30 — plataforma para validación integrada local
 
 **Decisión posterior de Cristian:** omitir por ahora esta validación integrada.

@@ -12,7 +12,9 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.Test;
 
-/** Synthetic native-key stubs exercise migration integrity; this is not a MySQL acceptance test. */
+/**
+ * Synthetic native-key stubs exercise migration integrity; this is not a MariaDB acceptance test.
+ */
 public class LiquibaseMigrationTest {
 	
 	@Test
@@ -26,7 +28,9 @@ public class LiquibaseMigrationTest {
 				sql.execute("create table location(location_id int primary key)");
 				sql.execute("create table encounter(encounter_id int primary key)");
 				sql.execute("create table provider(provider_id int primary key)");
-				sql.execute("create table diagnosis(diagnosis_id int primary key)");
+				assertEquals("encounter_diagnosis",
+				    org.openmrs.Diagnosis.class.getAnnotation(javax.persistence.Table.class).name());
+				sql.execute("create table encounter_diagnosis(diagnosis_id int primary key)");
 				sql.execute("create table orders(order_id int primary key)");
 				sql.execute("create table notification_alert(alert_id int primary key)");
 				sql.execute("create table address_hierarchy_entry(address_hierarchy_entry_id int primary key)");
@@ -40,7 +44,7 @@ public class LiquibaseMigrationTest {
 				sql.execute("insert into location values (1)");
 				sql.execute("insert into encounter values (1)");
 				sql.execute("insert into provider values (1)");
-				sql.execute("insert into diagnosis values (1)");
+				sql.execute("insert into encounter_diagnosis values (1)");
 				sql.execute("insert into orders values (1)");
 				sql.execute("insert into notification_alert values (1)");
 				sql.execute("insert into address_hierarchy_entry values (1)");
@@ -51,6 +55,18 @@ public class LiquibaseMigrationTest {
 			liquibase.update(8, "");
 			liquibase.update("");
 			liquibase.update("");
+			boolean diagnosisForeignKeyFound = false;
+			try (ResultSet keys = connection.getMetaData().getImportedKeys(null, null, "SURVEILLANCE_CASE")) {
+				while (keys.next()) {
+					if ("DIAGNOSIS_ID".equalsIgnoreCase(keys.getString("FKCOLUMN_NAME"))) {
+						assertEquals("ENCOUNTER_DIAGNOSIS",
+						    keys.getString("PKTABLE_NAME").toUpperCase(java.util.Locale.ROOT));
+						assertEquals("DIAGNOSIS_ID", keys.getString("PKCOLUMN_NAME").toUpperCase(java.util.Locale.ROOT));
+						diagnosisForeignKeyFound = true;
+					}
+				}
+			}
+			assertTrue("Expected FK to the native encounter diagnosis table", diagnosisForeignKeyFound);
 			try (Statement sql = connection.createStatement()) {
 				for (String table : new String[] { "NOTIFIABLE_EVENT", "OUTBREAK_ALERT_RULE", "OUTBREAK_ALERT",
 				        "PERIOD_CASE_COUNT", "EPIDEMIOLOGICAL_FOCUS", "SURVEILLANCE_CASE", "INDIVIDUAL_RECORD" }) {
@@ -85,6 +101,8 @@ public class LiquibaseMigrationTest {
 				    "insert into surveillance_case(surveillance_case_id,uuid,patient_id,encounter_id,provider_id,location_id,diagnosis_id,diagnosis_type,creator,date_created,voided) values(1,'case',1,1,1,1,1,'PROBABLE',1,CURRENT_TIMESTAMP,false)");
 				fails(sql,
 				    "insert into surveillance_case(surveillance_case_id,uuid,patient_id,encounter_id,provider_id,location_id,diagnosis_id,diagnosis_type,creator,date_created,voided) values(2,'same-diagnosis',1,1,1,1,1,'PROBABLE',1,CURRENT_TIMESTAMP,false)");
+				fails(sql,
+				    "insert into surveillance_case(surveillance_case_id,uuid,patient_id,encounter_id,provider_id,location_id,diagnosis_id,diagnosis_type,creator,date_created,voided) values(3,'missing-diagnosis',1,1,1,1,999,'PROBABLE',1,CURRENT_TIMESTAMP,false)");
 			}
 		}
 	}
