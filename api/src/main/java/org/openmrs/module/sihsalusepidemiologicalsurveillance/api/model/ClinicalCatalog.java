@@ -37,8 +37,6 @@ public class ClinicalCatalog {
 	
 	public int minimalDaysInFirstWeek = 4;
 	
-	public String analyticsDatasource = "primary";
-	
 	public Map<String, String> questions = new LinkedHashMap<String, String>();
 	
 	public List<Choice> statuses = new ArrayList<Choice>();

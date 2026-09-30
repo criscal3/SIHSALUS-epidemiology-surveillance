@@ -69,7 +69,6 @@ public class SurveillanceServiceTest {
 		assertEquals(5, e.getAllObs(false).size());
 		assertEquals(f.source.getUuid(), e.getUuid());
 		verify(f.clinical).saveDiagnosis(any(Diagnosis.class));
-		verify(f.dao).save(any(SurveillanceAudit.class));
 		org.mockito.InOrder order = inOrder(f.dao, f.clinical);
 		order.verify(f.dao).lockPatient(f.patient);
 		order.verify(f.dao).lockEvent(f.event);

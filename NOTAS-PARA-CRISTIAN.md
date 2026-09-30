@@ -48,5 +48,26 @@ Para llevar la gestación al encuentro, como exige el modelo, su esquema JSON ne
 UUID real del concepto de gestación (y de sus respuestas). No se han proporcionado esos
 UUID ni está disponible la BD de referencia, por lo que no se puede construir un esquema
 ejecutable sin inventar metadatos. El formulario actual persiste los atributos propios de
-`surveillance_case` por el contrato REST y debe conectarse al esquema de encuentro cuando
-se disponga de dicha configuración.
+`surveillance_case` por el contrato REST y debe conectarse al esquema de encuentro when configuration is available.
+
+## 2026-09-30 - migration of the seven current tables
+
+Changesets 1-12, already applied, created historical tables
+`surveillance_notifiable_event`, `surveillance_outbreak_alert_rule`,
+`surveillance_period_case_count`, `surveillance_epidemiological_focus`,
+`surveillance_audit`, and `surveillance_noti_notification`. The current model instead
+requires seven physical tables: `notifiable_event`, `outbreak_alert_rule`,
+`outbreak_alert`, `period_case_count`, `epidemiological_focus`, `surveillance_case`,
+and `individual_record`; it eliminates the component audit and notification tables.
+
+Cristian confirmed changesets 13 and 14 have not run and they can be rewritten. Creating
+the seven new tables without migrating or removing the historical six would create
+duplicates and violate the requirement for exactly seven. Explicit approval is required
+for incremental changesets that rename/transform the historical tables and remove or
+migrate the component audit and notification tables. Changesets 1-12 will not be edited.
+
+**Decisión de Cristian (2026-09-30):** después de realizar una copia SQL externa,
+autoriza descartar los datos históricos de esas seis tablas y aplicar los changesets 13 y
+14 que las retiran y crean exactamente las siete tablas vigentes. El rollback de esta
+operación no puede recuperar los datos descartados; la restauración de datos corresponde
+a la copia SQL externa.

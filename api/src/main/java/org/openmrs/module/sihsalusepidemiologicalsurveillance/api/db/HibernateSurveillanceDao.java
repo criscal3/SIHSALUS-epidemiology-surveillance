@@ -37,7 +37,7 @@ public class HibernateSurveillanceDao implements SurveillanceDao {
 	@Override
 	@SuppressWarnings("unchecked")
 	public List<NotifiableEvent> events() {
-		return sessionFactory.getCurrentSession().createCriteria(NotifiableEvent.class).addOrder(Order.asc("name")).list();
+		return sessionFactory.getCurrentSession().createCriteria(NotifiableEvent.class).list();
 	}
 	
 	@Override
@@ -55,9 +55,8 @@ public class HibernateSurveillanceDao implements SurveillanceDao {
 	
 	@Override
 	public EpidemiologicalFocus focus(NotifiableEvent event, String locationUuid) {
-		return (EpidemiologicalFocus) sessionFactory.getCurrentSession().createCriteria(EpidemiologicalFocus.class)
-		        .add(Restrictions.eq("event", event)).createAlias("location", "l")
-		        .add(Restrictions.eq("l.uuid", locationUuid)).uniqueResult();
+		// Foci are keyed by Address Hierarchy entries, not service locations. RF-21 is out of scope.
+		return null;
 	}
 	
 	@Override
@@ -81,7 +80,8 @@ public class HibernateSurveillanceDao implements SurveillanceDao {
 	@Override
 	public void lockEvent(NotifiableEvent event) {
 		sessionFactory.getCurrentSession()
-		        .createSQLQuery("select event_id from surveillance_notifiable_event where event_id = :id for update")
+		        .createSQLQuery(
+		            "select notifiable_event_id from notifiable_event where notifiable_event_id = :id for update")
 		        .setInteger("id", event.getId()).uniqueResult();
 		sessionFactory.getCurrentSession().refresh(event);
 	}

@@ -131,7 +131,6 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		if (!event.isRetired()) {
 			event.setRetired(true);
 			dao.save(event);
-			audit(actor, "delete", "NotifiableEvent", event.getId());
 		}
 	}
 	
@@ -431,7 +430,6 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		if (diagnosis != null)
 			encounterDiagnoses.add(diagnosis);
 		CaseResult result = assess(encounter, m);
-		audit(actor, "registro", "encounter", encounter.getId());
 		if (!result.immediateAlerts.isEmpty() || !result.outbreakAlerts.isEmpty())
 			clinical.alert(actor, "Vigilancia epidemiologica: revisar alertas del registro " + encounter.getUuid());
 		if ("CONFIRMED".equals(request.status))
@@ -446,7 +444,6 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		Encounter encounter = clinical.encounter(uuid);
 		if (encounter == null || encounter.getVoided() || CaseObservations.find(encounter, m.questions.get("event")) == null)
 			throw new SurveillanceException(404, "CASE_NOT_FOUND");
-		audit(actor, "consulta", "encounter", encounter.getId());
 		return assess(encounter, m);
 	}
 	
@@ -525,7 +522,6 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		List<PeriodCaseCount> counts = dao.counts(event, period, calendar.year(start, period) - m.historicalYears,
 		    calendar.year(end, period) - 1);
 		SurveillanceReport report = calculator.calculate(eventUuid, start, end, period, records, counts, m);
-		audit(actor, "generacion de reportes", "NotifiableEvent", event.getId());
 		return report;
 	}
 	
@@ -597,17 +593,6 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		return obs;
 	}
 	
-	private void audit(User actor, String action, String entity, Integer id) {
-		SurveillanceAudit audit = new SurveillanceAudit();
-		audit.setUser(actor);
-		audit.setTimestamp(new Date());
-		audit.setActionType(action);
-		audit.setAffectedEntity(entity);
-		audit.setAffectedRecordId(id);
-		audit.setResult("SUCCESS");
-		dao.save(audit);
-	}
-	
 	public static String fingerprint(CaseRequest r) {
 		try {
 			StringBuilder canonical = new StringBuilder();
@@ -658,7 +643,6 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		event.setPeriodicity(periodicity);
 		event.setDeadlineDays(deadline);
 		dao.save(event);
-		audit(actor, "configuracion", "NotifiableEvent", event.getId());
 		return eventJson(event);
 	}
 	
@@ -682,7 +666,6 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		rule.setThreshold("EPIDEMIC".equals(type) ? 75d : "SUSTAINED".equals(type) ? 50d : null);
 		rule.setActive((Boolean) body.get("active"));
 		dao.save(rule);
-		audit(actor, "configuracion", "OutbreakAlertRule", rule.getId());
 		return Collections.<String, Object> singletonMap("uuid", rule.getUuid());
 	}
 	

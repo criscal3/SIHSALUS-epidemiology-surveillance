@@ -28,6 +28,7 @@ public class LiquibaseMigrationTest {
 				sql.execute("create table provider(provider_id int primary key)");
 				sql.execute("create table diagnosis(diagnosis_id int primary key)");
 				sql.execute("create table orders(order_id int primary key)");
+				sql.execute("create table notification_alert(alert_id int primary key)");
 				sql.execute("create table address_hierarchy_entry(address_hierarchy_entry_id int primary key)");
 				sql.execute(
 				    "create table scheduler_task_config(task_config_id int auto_increment primary key, name varchar(255), description varchar(1024), schedulable_class varchar(1024), repeat_interval bigint, start_on_startup boolean, started boolean, uuid varchar(38) unique, created_by int)");
@@ -41,46 +42,45 @@ public class LiquibaseMigrationTest {
 				sql.execute("insert into provider values (1)");
 				sql.execute("insert into diagnosis values (1)");
 				sql.execute("insert into orders values (1)");
+				sql.execute("insert into notification_alert values (1)");
 				sql.execute("insert into address_hierarchy_entry values (1)");
 			}
 			Database database = DatabaseFactory.getInstance()
 			        .findCorrectDatabaseImplementation(new JdbcConnection(connection));
 			Liquibase liquibase = new Liquibase("liquibase.xml", new ClassLoaderResourceAccessor(), database);
 			liquibase.update(8, "");
-			try (Statement sql = connection.createStatement()) {
-				sql.execute("update evento_notificable set nombre='Previously deployed event' where concept_id=3");
-				connection.commit();
-			}
 			liquibase.update("");
 			liquibase.update("");
 			try (Statement sql = connection.createStatement()) {
-				ResultSet preserved = sql
-				        .executeQuery("select name, retired from surveillance_notifiable_event where concept_id=3");
-				assertTrue(preserved.next());
-				assertEquals("Previously deployed event", preserved.getString(1));
-				assertFalse(preserved.getBoolean(2));
-				preserved.close();
+				for (String table : new String[] { "NOTIFIABLE_EVENT", "OUTBREAK_ALERT_RULE", "OUTBREAK_ALERT",
+				        "PERIOD_CASE_COUNT", "EPIDEMIOLOGICAL_FOCUS", "SURVEILLANCE_CASE", "INDIVIDUAL_RECORD" }) {
+					assertTrue("Expected current table " + table,
+					    connection.getMetaData().getTables(null, null, table, null).next());
+				}
+				for (String retired : new String[] { "SURVEILLANCE_NOTIFIABLE_EVENT", "SURVEILLANCE_OUTBREAK_ALERT_RULE",
+				        "SURVEILLANCE_PERIOD_CASE_COUNT", "SURVEILLANCE_EPIDEMIOLOGICAL_FOCUS", "SURVEILLANCE_AUDIT",
+				        "SURVEILLANCE_NOTI_NOTIFICATION" }) {
+					assertFalse("Historical table must be retired: " + retired,
+					    connection.getMetaData().getTables(null, null, retired, null).next());
+				}
 				ResultSet tasks = sql
 				        .executeQuery("select count(*) from scheduler_task_config where start_on_startup=false");
 				tasks.next();
 				assertEquals(1, tasks.getInt(1));
 				tasks.close();
-				ResultSet tables = connection.getMetaData().getTables(null, null, "SURVEILLANCE_NOTIFIABLE_EVENT", null);
-				assertTrue(tables.next());
-				ResultSet seeded = sql
-				        .executeQuery("select count(*) from surveillance_notifiable_event where concept_id in (3,4)");
-				seeded.next();
-				assertEquals(2, seeded.getInt(1));
-				seeded.close();
 				sql.execute(
-				    "insert into surveillance_notifiable_event(event_id,uuid,concept_id,name,periodicity,deadline_days) values(10,'event',1,'Synthetic','semanal',7)");
+				    "insert into notifiable_event(notifiable_event_id,uuid,concept_id,periodicity,reference_regulation,valid_from,creator,date_created) values(10,'event',1,'SEMANAL','test',CURRENT_DATE,1,CURRENT_TIMESTAMP)");
 				fails(sql,
-				    "insert into surveillance_outbreak_alert_rule(uuid,event_id,condition_type,active) values('orphan',99,'EPIDEMIC',true)");
+				    "insert into outbreak_alert_rule(uuid,notifiable_event_id,condition_type,version,valid_from,active,creator,date_created) values('orphan',99,'UMBRAL_CANAL',1,CURRENT_DATE,true,1,CURRENT_TIMESTAMP)");
 				sql.execute(
-				    "insert into surveillance_period_case_count(uuid,event_id,period_type,calendar_year,period_number,case_count) values('count',10,'semana',2026,1,2)");
+				    "insert into period_case_count(uuid,notifiable_event_id,address_hierarchy_entry_id,zone_level,period_type,year,period_number,start_date,end_date,diagnosis_type,case_count,calculation_date,creator,date_created) values('count',10,1,'DISTRITO','SEMANA',2026,1,CURRENT_DATE,CURRENT_DATE,'CONFIRMADO',2,CURRENT_TIMESTAMP,1,CURRENT_TIMESTAMP)");
 				fails(sql,
-				    "insert into surveillance_period_case_count(uuid,event_id,period_type,calendar_year,period_number,case_count) values('duplicate',10,'semana',2026,1,3)");
-				fails(sql, "delete from surveillance_notifiable_event where event_id=10");
+				    "insert into period_case_count(uuid,notifiable_event_id,address_hierarchy_entry_id,zone_level,period_type,year,period_number,start_date,end_date,diagnosis_type,case_count,calculation_date,creator,date_created) values('duplicate',10,1,'DISTRITO','SEMANA',2026,1,CURRENT_DATE,CURRENT_DATE,'CONFIRMADO',3,CURRENT_TIMESTAMP,1,CURRENT_TIMESTAMP)");
+				fails(sql, "delete from notifiable_event where notifiable_event_id=10");
+				fails(sql,
+				    "insert into outbreak_alert(uuid,rule_id,address_hierarchy_entry_id,year,epidemiological_week,generation_date,alert_id,creator,date_created) values('orphan-alert',1,1,2026,1,CURRENT_TIMESTAMP,99,1,CURRENT_TIMESTAMP)");
+				fails(sql,
+				    "insert into individual_record(uuid,year,epidemiological_week,format_version,content_hash,download_date,creator,date_created) values('orphan-creator',2026,1,'v1','0123456789012345678901234567890123456789012345678901234567890123',CURRENT_TIMESTAMP,99,CURRENT_TIMESTAMP)");
 				sql.execute(
 				    "insert into surveillance_case(surveillance_case_id,uuid,patient_id,encounter_id,provider_id,location_id,diagnosis_id,diagnosis_type,creator,date_created,voided) values(1,'case',1,1,1,1,1,'PROBABLE',1,CURRENT_TIMESTAMP,false)");
 				fails(sql,

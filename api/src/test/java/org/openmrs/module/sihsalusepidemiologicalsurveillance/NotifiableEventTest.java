@@ -52,7 +52,6 @@ public class NotifiableEventTest {
 		assertEquals(1, result.get("deadlineDays"));
 		verify(f.dao).lockEvent(f.event);
 		verify(f.dao).save(f.event);
-		verify(f.dao).save(any(SurveillanceAudit.class));
 	}
 	
 	@Test
@@ -64,7 +63,6 @@ public class NotifiableEventTest {
 		assertEquals(1, f.service.getEvents(true).size());
 		assertEquals(true, f.service.getEvent(f.event.getUuid()).get("retired"));
 		verify(f.dao, times(1)).save(f.event);
-		verify(f.dao, times(1)).save(any(SurveillanceAudit.class));
 		assertEquals(0, f.service.report(f.event.getUuid(), "2026-01-01", "2026-01-02", "dia").total);
 		expect("EVENT_RETIRED", () -> f.service.registerCase(f.request));
 		verify(f.clinical, never()).saveEncounter(any(Encounter.class));
