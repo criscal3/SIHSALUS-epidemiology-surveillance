@@ -2,6 +2,11 @@
 
 ## 2026-09-30 — plataforma para validación integrada local
 
+**Decisión posterior de Cristian:** omitir por ahora esta validación integrada.
+No se ejecutarán contenedores ni migraciones para ella y se mantiene el objetivo
+Maven 2.4.2. La validación se conserva como pendiente, no aprobada; la elección de
+plataforma descrita a continuación ya no bloquea las correcciones locales.
+
 Docker Desktop está operativo. Existe un contenedor `mariadb` con imagen
 `mariadb:10.11.7`; no se ha consultado ni modificado su base de datos.
 La imagen local `ghcr.io/sihsalus/sihsalus-backend:latest`, identificador
