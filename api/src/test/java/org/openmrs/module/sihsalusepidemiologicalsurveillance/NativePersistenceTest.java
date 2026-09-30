@@ -18,6 +18,41 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 	private SurveillanceDao dao;
 	
 	@Test
+	public void aggregateQueryFiltersPeriodYearsAndGeographyAfterReload() {
+		NotifiableEvent event = new NotifiableEvent();
+		event.setConcept(Context.getConceptService().getConcept(3));
+		event.setPeriodicity("SEMANAL");
+		event.setReferenceRegulation("Synthetic reporting test");
+		event.setValidFrom(new Date());
+		dao.save(event);
+		for (String level : Arrays.asList("DISTRITO", "CENTRO_POBLADO")) {
+			for (int year : Arrays.asList(2025, 2026)) {
+				org.openmrs.module.sihsalusepidemiologicalsurveillance.model.PeriodCaseCount count = new org.openmrs.module.sihsalusepidemiologicalsurveillance.model.PeriodCaseCount();
+				count.setEvent(event);
+				count.setAddressHierarchyEntryId("DISTRITO".equals(level) ? 10 : 100);
+				count.setZoneLevel(level);
+				count.setPeriodType("DIA");
+				count.setYear(year);
+				count.setPeriodNumber(1);
+				count.setDiagnosisType("CONFIRMADO");
+				count.setCaseCount(7);
+				count.setStartDate(java.sql.Date.valueOf(year + "-01-01"));
+				count.setEndDate(count.getStartDate());
+				count.setCalculationDate(new Date());
+				count.setCreator(Context.getAuthenticatedUser());
+				count.setDateCreated(new Date());
+				dao.save(count);
+			}
+		}
+		Context.flushSession();
+		Context.clearSession();
+		assertEquals(1, dao.counts(event, "dia", 2026, 2026, "DISTRITO", 10).size());
+		assertEquals(2, dao.counts(event, "dia", 2025, 2026, "CENTRO_POBLADO", null).size());
+		assertTrue(dao.counts(event, "dia", 2026, 2026, "CENTRO_POBLADO", 10).isEmpty());
+		assertTrue(dao.counts(event, "semana", 2026, 2026, "DISTRITO", 10).isEmpty());
+	}
+	
+	@Test
 	public void persistsAndReadsAnEventThroughTheRegisteredHibernateMapping() {
 		NotifiableEvent event = new NotifiableEvent();
 		event.setConcept(Context.getConceptService().getConcept(3));

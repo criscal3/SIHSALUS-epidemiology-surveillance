@@ -15,6 +15,57 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.*;
 public class SurveillanceServiceTest {
 	
 	@Test
+	public void reportReadsOnlyAggregatesWithDefaultFilters() {
+		SyntheticFixture f = new SyntheticFixture();
+		SurveillanceReport report = f.service.report(f.event.getUuid(), "2026-01-01", "2026-01-03", "SEMANA");
+		assertEquals("CONFIRMADO", report.diagnosisType);
+		assertEquals("CENTRO_POBLADO", report.zoneLevel);
+		verify(f.dao).counts(f.event, "dia", 2026, 2026, "CENTRO_POBLADO", null);
+		// January 1-3 belongs to epidemiological year 2025 (Sunday-to-Saturday calendar).
+		verify(f.dao).counts(f.event, "semana", 2020, 2024, "CENTRO_POBLADO", null);
+		verify(f.dao, never()).encounters(any(), any(), anyString());
+		verify(f.dao, never()).surveillanceCases();
+		verifyNoInteractions(f.clinical);
+	}
+	
+	@Test
+	public void reportValidatesAddressAgainstSelectedLevel() {
+		SyntheticFixture f = new SyntheticFixture();
+		when(f.dao.addressId("synthetic-district", "COUNTY_DISTRICT")).thenReturn(10);
+		when(f.dao.addressId("synthetic-district", "CITY_VILLAGE")).thenReturn(null);
+		SurveillanceReport report = f.service.report(f.event.getUuid(), "2026-01-01", "2026-01-03", "dia", "DISTRITO",
+		    "synthetic-district", "TODOS");
+		assertEquals("synthetic-district", report.address);
+		assertEquals("TODOS", report.population);
+		verify(f.dao).counts(f.event, "dia", 2026, 2026, "DISTRITO", 10);
+		try {
+			f.service.report(f.event.getUuid(), "2026-01-01", "2026-01-03", "dia", "CENTRO_POBLADO", "synthetic-district",
+			    "TODOS");
+			fail();
+		}
+		catch (SurveillanceException ex) {
+			assertEquals(422, ex.getStatus());
+			assertEquals("INVALID_REPORT_ADDRESS", ex.getCode());
+		}
+	}
+	
+	@Test
+	public void reportRejectsUnsupportedGeographyAndDiscardedFilter() {
+		SyntheticFixture f = new SyntheticFixture();
+		for (String[] selection : Arrays.asList(new String[] { "PROVINCIA", "TODOS", "INVALID_ZONE_LEVEL" },
+		    new String[] { "DISTRITO", "DESCARTADO", "INVALID_DIAGNOSIS_TYPE" })) {
+			try {
+				f.service.report(f.event.getUuid(), "2026-01-01", "2026-01-03", "dia", selection[0], null, selection[1]);
+				fail();
+			}
+			catch (SurveillanceException ex) {
+				assertEquals(422, ex.getStatus());
+				assertEquals(selection[2], ex.getCode());
+			}
+		}
+	}
+	
+	@Test
 	public void draftPersistsEveryCaseAttributeAndLeavesIndividualRecordUnset() {
 		SyntheticFixture f = new SyntheticFixture();
 		f.surveillanceRequest.infectionAddressUuid = SyntheticFixture.uuid(92);
@@ -75,7 +126,7 @@ public class SurveillanceServiceTest {
 		draft.setLocation(f.location);
 		draft.setDiagnosis(f.encounterDiagnosis);
 		when(f.dao.byUuid(SurveillanceCase.class, draft.getUuid())).thenReturn(draft);
-
+		
 		try {
 			f.service.closeDraft(draft.getUuid());
 			fail();
@@ -83,11 +134,11 @@ public class SurveillanceServiceTest {
 		catch (SurveillanceException ex) {
 			assertEquals("REQUIRED_FIELDS", ex.getCode());
 		}
-
+		
 		verify(f.access).require(SurveillanceConstants.REGISTER);
 		verify(f.access, never()).require(SurveillanceConstants.VIEW);
 	}
-
+	
 	@Test
 	public void registrationCompletesExistingEncounterDiagnosisAndAudit() {
 		SyntheticFixture f = new SyntheticFixture();

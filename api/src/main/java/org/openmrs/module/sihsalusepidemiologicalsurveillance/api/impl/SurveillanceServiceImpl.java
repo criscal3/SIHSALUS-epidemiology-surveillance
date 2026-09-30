@@ -491,7 +491,24 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 	
 	@Override
 	public SurveillanceReport report(String eventUuid, String from, String to, String period) {
-		User actor = access.require(SurveillanceConstants.REPORT);
+		return report(eventUuid, from, to, period, "CENTRO_POBLADO", null, "CONFIRMADO");
+	}
+	
+	@Override
+	public SurveillanceReport report(String eventUuid, String from, String to, String period, String zoneLevel,
+	        String address, String diagnosisType) {
+		access.require(SurveillanceConstants.REPORT);
+		if (!Arrays.asList("DISTRITO", "CENTRO_POBLADO").contains(zoneLevel))
+			throw new SurveillanceException(422, "INVALID_ZONE_LEVEL");
+		if (!Arrays.asList("CONFIRMADO", "PROBABLE", "TODOS").contains(diagnosisType))
+			throw new SurveillanceException(422, "INVALID_DIAGNOSIS_TYPE");
+		period = period == null ? "semana" : period.toLowerCase(Locale.ENGLISH);
+		Integer addressId = null;
+		if (address != null && !address.trim().isEmpty()) {
+			addressId = dao.addressId(address, "DISTRITO".equals(zoneLevel) ? "COUNTY_DISTRICT" : "CITY_VILLAGE");
+			if (addressId == null)
+				throw new SurveillanceException(422, "INVALID_REPORT_ADDRESS");
+		}
 		ClinicalCatalog m = catalog.get();
 		NotifiableEvent event = dao.byUuid(NotifiableEvent.class, eventUuid);
 		if (event == null)
@@ -510,10 +527,12 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 			throw new SurveillanceException(422, "INVALID_DATE_RANGE");
 		if (start.isBefore(LocalDate.parse(m.surveillanceStartDate)))
 			throw new SurveillanceException(422, "OUTSIDE_COVERAGE");
-		List<CaseRecord> records = records(m, start, end.plusDays(1), eventConcepts());
+		List<PeriodCaseCount> daily = dao.counts(event, "dia", start.getYear(), end.getYear(), zoneLevel, addressId);
 		List<PeriodCaseCount> counts = dao.counts(event, period, calendar.year(start, period) - m.historicalYears,
-		    calendar.year(end, period) - 1);
-		SurveillanceReport report = calculator.calculate(eventUuid, start, end, period, records, counts, m);
+		    calendar.year(end, period) - 1, zoneLevel, addressId);
+		SurveillanceReport report = new AggregateReportCalculator().calculate(eventUuid, start, end, period, zoneLevel,
+		    addressId, diagnosisType, daily, counts, m);
+		report.address = addressId == null ? null : address;
 		return report;
 	}
 	

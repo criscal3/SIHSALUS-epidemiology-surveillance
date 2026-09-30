@@ -52,6 +52,10 @@ public interface SurveillanceService extends OpenmrsService {
 	@Authorized(SurveillanceConstants.REPORT)
 	SurveillanceReport report(String eventUuid, String from, String to, String period);
 	
+	@Authorized(SurveillanceConstants.REPORT)
+	SurveillanceReport report(String eventUuid, String from, String to, String period, String zoneLevel, String address,
+	        String diagnosisType);
+	
 	@Authorized(SurveillanceConstants.MANAGE)
 	void refreshCounts();
 	

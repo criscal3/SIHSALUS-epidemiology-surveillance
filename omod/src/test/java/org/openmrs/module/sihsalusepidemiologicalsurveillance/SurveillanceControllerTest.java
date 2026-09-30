@@ -13,6 +13,23 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.web.controller.Sur
 public class SurveillanceControllerTest {
 	
 	@Test
+	public void reportRouteDefaultsToConfirmedAndPassesExplicitFilters() throws Exception {
+		SurveillanceService service = mock(SurveillanceService.class);
+		SurveillanceController controller = new SurveillanceController();
+		controller.setService(service);
+		org.springframework.test.web.servlet.MockMvc mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
+		        .standaloneSetup(controller).build();
+		String route = "/rest/v1/sihsalusepidemiologicalsurveillance/reports?event=event&from=2026-01-01&to=2026-01-03";
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(route))
+		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+		verify(service).report("event", "2026-01-01", "2026-01-03", "semana", "CENTRO_POBLADO", null, "CONFIRMADO");
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+		        .get(route + "&period=mes&zoneLevel=DISTRITO&address=district&diagnosisType=TODOS"))
+		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+		verify(service).report("event", "2026-01-01", "2026-01-03", "mes", "DISTRITO", "district", "TODOS");
+	}
+	
+	@Test
 	public void eventRoutesDispatchTheVersionedContract() throws Exception {
 		SurveillanceService service = mock(SurveillanceService.class);
 		SurveillanceController controller = new SurveillanceController();

@@ -89,8 +89,11 @@ public class SurveillanceController {
 	@RequestMapping(value = "/reports", method = RequestMethod.GET)
 	@ResponseBody
 	public SurveillanceReport report(@RequestParam("event") String event, @RequestParam("from") String from,
-	        @RequestParam("to") String to, @RequestParam(value = "period", defaultValue = "semana") String period) {
-		return service().report(event, from, to, period);
+	        @RequestParam("to") String to, @RequestParam(value = "period", defaultValue = "semana") String period,
+	        @RequestParam(value = "zoneLevel", defaultValue = "CENTRO_POBLADO") String zoneLevel,
+	        @RequestParam(value = "address", required = false) String address,
+	        @RequestParam(value = "diagnosisType", defaultValue = "CONFIRMADO") String diagnosisType) {
+		return service().report(event, from, to, period, zoneLevel, address, diagnosisType);
 	}
 	
 	@RequestMapping(value = "/counts/refresh", method = RequestMethod.POST)

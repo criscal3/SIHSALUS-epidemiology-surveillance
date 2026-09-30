@@ -77,6 +77,30 @@ enumeraciones, fechas, residencia o centro poblado inválidos. Las respuestas 42
 
 ## Catálogos geográficos
 
+## Indicadores
+
+`GET /reports` requiere `Vigilancia Epidemiologica: Ver Indicadores` y los parámetros
+`event` (UUID), `from` y `to` (fechas inclusivas `YYYY-MM-DD`).
+
+| Parámetro opcional | Valores | Predeterminado |
+|---|---|---|
+| `period` | `dia`, `semana`, `mes`, `trimestre`, `semestre` | `semana` |
+| `zoneLevel` | `DISTRITO`, `CENTRO_POBLADO` | `CENTRO_POBLADO` |
+| `address` | UUID de Address Hierarchy del nivel seleccionado | Todas las zonas de ese nivel |
+| `diagnosisType` | `CONFIRMADO`, `PROBABLE`, `TODOS` | `CONFIRMADO` |
+
+`TODOS` suma confirmados y probables, nunca descartados. Los reportes leen únicamente
+`period_case_count`: curva diaria por inicio de síntomas y canal por período. Nunca se
+suman distritos y centros poblados juntos. El histórico suma primero las zonas y tipos
+seleccionados de cada año y luego calcula cuartiles; un año sin filas históricas no se
+inventa como cero. Los períodos parcialmente seleccionados se marcan `PARTIAL_PERIOD`.
+
+La respuesta conserva `generatedAt`, `eventUuid`, `from`, `to`, `period`, `total`,
+`curve`, `channel` y `warnings`; agrega `zoneLevel`, `address` y `diagnosisType`.
+`population` expresa el diagnóstico seleccionado y `demographics` queda vacío (RF-22
+fuera de esta iteración). Nivel, diagnóstico o dirección incompatible producen HTTP
+422 con `INVALID_ZONE_LEVEL`, `INVALID_DIAGNOSIS_TYPE` o `INVALID_REPORT_ADDRESS`.
+
 ## Eventos notificables
 
 `POST /events` crea una nueva versión con `conceptUuid`, `periodicity`

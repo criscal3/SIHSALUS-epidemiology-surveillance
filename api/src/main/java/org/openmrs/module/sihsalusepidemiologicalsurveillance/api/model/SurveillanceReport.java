@@ -16,6 +16,12 @@ public class SurveillanceReport {
 	
 	public String period;
 	
+	public String zoneLevel;
+	
+	public String address;
+	
+	public String diagnosisType;
+	
 	public String population = "CONFIRMED";
 	
 	public int total;

@@ -16,13 +16,13 @@ RF-13 y RF-22 quedan fuera de la iteración 1.
 | Febriles y deduplicación retirada | Contradice | Persisten `CaseRequest`, `registerCase`, `possibleDuplicates` y `POSSIBLE_DUPLICATE`. | Retirar el flujo heredado tras confirmar que ningún consumidor lo usa. |
 | RF-12/RF-13/RF-22 fuera de iteración | Contradice | Persisten `OutbreakEngine`, reglas y partes de reportes heredados. | Aislar o retirar sin ampliar alertas ni demografía. |
 | Scheduler OpenMRS y `period_case_count` | Cumple | `RefreshCountsTask` usa el Scheduler y el recálculo hace upsert para centro poblado/distrito. | Probar idempotencia contra MariaDB real. |
-| Reportes sobre la BD original | Parcial | No existe réplica; todavía hay reportes heredados orientados a encuentros. | Rehacer consultas de curva/canal sobre `period_case_count`. |
+| Reportes sobre la BD original | Cumple en implementación local | `/reports` lee `period_case_count`, separa distrito/centro poblado y permite confirmados, probables o ambos. La curva y el canal no consultan encuentros. | Cotejar resultados contra una instancia OpenMRS/MariaDB con datos sintéticos. |
 | Auditoría | Parcial | No hay tabla ni servicio de auditoría propios. El OMOD externo no está disponible para verificar su API. | Integrar mediante el punto descrito en `docs/auditoria-integracion.md`. |
 | Notificaciones / NOTI-Web | Parcial | No hay integración nueva; `outbreak_alert.alert_id` referencia el núcleo para iteración 2. | No ampliar en iteración 1. |
 | Privilegios por caso de uso | Parcial | Los cinco privilegios reales están declarados en `config.xml` y documentados en README/API. | Aplicar controles por endpoint/servicio y probar 403 con sesión real. |
 | Frontend único | Cumple | Solo existe `esm-epidemiological-surveillance-app`. | Mantener. |
 | Formulario JSON React Form Engine, máximo tres pasos | Parcial | El formulario actual mantiene tres pasos y selector geográfico, pero no usa React Form Engine por decisión temporal y faltan UUID de gestación. | Implementar cuando exista configuración de metadatos. |
-| Contrato REST | Parcial | `docs/api-contract.md` cubre casos, eventos y geografía. | Reconciliar rutas heredadas de reportes/reglas antes de publicar como contrato estable. |
+| Contrato REST | Parcial | `docs/api-contract.md` cubre casos, eventos, geografía e indicadores con los filtros aprobados. | Completar validación integrada frontend/OMOD antes de publicar como contrato estable. |
 | Pruebas | Parcial | Pruebas unitarias y migración H2 existen. | Ejecutar `mvn --batch-mode clean verify` final y pruebas MariaDB/context-sensitive exigidas. |
 
 ## Cambio amplio pendiente de aprobación

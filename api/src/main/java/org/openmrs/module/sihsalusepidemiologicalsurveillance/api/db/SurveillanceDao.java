@@ -24,6 +24,9 @@ public interface SurveillanceDao {
 	
 	List<PeriodCaseCount> counts(NotifiableEvent event, String period, int fromYear, int toYear);
 	
+	List<PeriodCaseCount> counts(NotifiableEvent event, String period, int fromYear, int toYear, String zoneLevel,
+	        Integer addressHierarchyEntryId);
+	
 	void replaceCounts(NotifiableEvent event, List<PeriodCaseCount> counts);
 	
 	void lockPatient(Patient patient);
@@ -43,6 +46,10 @@ public interface SurveillanceDao {
 	SurveillanceCase caseByDiagnosis(org.openmrs.Diagnosis diagnosis);
 	
 	String addressUuid(Integer id);
+	
+	Integer addressId(String uuid);
+	
+	Integer addressId(String uuid, String field);
 	
 	List<Object[]> addressChildren(String addressField, String parentUuid);
 }

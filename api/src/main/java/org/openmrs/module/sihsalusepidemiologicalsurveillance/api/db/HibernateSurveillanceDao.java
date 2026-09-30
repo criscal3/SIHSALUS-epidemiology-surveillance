@@ -62,10 +62,22 @@ public class HibernateSurveillanceDao implements SurveillanceDao {
 	@Override
 	@SuppressWarnings("unchecked")
 	public List<PeriodCaseCount> counts(NotifiableEvent event, String period, int fromYear, int toYear) {
-		return sessionFactory.getCurrentSession().createCriteria(PeriodCaseCount.class).add(Restrictions.eq("event", event))
+		return counts(event, period, fromYear, toYear, null, null);
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	public List<PeriodCaseCount> counts(NotifiableEvent event, String period, int fromYear, int toYear, String zoneLevel,
+	        Integer addressHierarchyEntryId) {
+		org.hibernate.Criteria criteria = sessionFactory.getCurrentSession().createCriteria(PeriodCaseCount.class)
+		        .add(Restrictions.eq("event", event))
 		        .add(Restrictions.eq("periodType", period.toUpperCase(java.util.Locale.ENGLISH)))
-		        .add(Restrictions.between("year", fromYear, toYear)).addOrder(Order.asc("year"))
-		        .addOrder(Order.asc("periodNumber")).list();
+		        .add(Restrictions.between("year", fromYear, toYear));
+		if (zoneLevel != null)
+			criteria.add(Restrictions.eq("zoneLevel", zoneLevel));
+		if (addressHierarchyEntryId != null)
+			criteria.add(Restrictions.eq("addressHierarchyEntryId", addressHierarchyEntryId));
+		return criteria.addOrder(Order.asc("year")).addOrder(Order.asc("periodNumber")).list();
 	}
 	
 	@Override
@@ -166,6 +178,22 @@ public class HibernateSurveillanceDao implements SurveillanceDao {
 		        .createSQLQuery("select uuid from address_hierarchy_entry where address_hierarchy_entry_id = :id")
 		        .setInteger("id", id).uniqueResult();
 		return value == null ? null : value.toString();
+	}
+	
+	@Override
+	public Integer addressId(String uuid) {
+		Object value = sessionFactory.getCurrentSession()
+		        .createSQLQuery("select address_hierarchy_entry_id from address_hierarchy_entry where uuid = :uuid")
+		        .setString("uuid", uuid).uniqueResult();
+		return value == null ? null : ((Number) value).intValue();
+	}
+	
+	@Override
+	public Integer addressId(String uuid, String field) {
+		Object value = sessionFactory.getCurrentSession().createSQLQuery(
+		    "select e.address_hierarchy_entry_id from address_hierarchy_entry e join address_hierarchy_level l on l.address_hierarchy_level_id = e.level_id where e.uuid = :uuid and l.address_field = :field")
+		        .setString("uuid", uuid).setString("field", field).uniqueResult();
+		return value == null ? null : ((Number) value).intValue();
 	}
 	
 	@Override

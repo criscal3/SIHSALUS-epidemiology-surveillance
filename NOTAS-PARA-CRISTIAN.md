@@ -1,5 +1,15 @@
 # Notas para Cristian
 
+## 2026-09-30 — filtros de indicadores aprobados e implementados
+
+Se implementa `diagnosisType=CONFIRMADO|PROBABLE|TODOS`, predeterminado `CONFIRMADO`,
+y `zoneLevel=DISTRITO|CENTRO_POBLADO`, con `address` opcional del nivel seleccionado.
+Sin dirección se suman todas las zonas de ese nivel, nunca ambos niveles. Curva y canal
+leen `period_case_count`; RF-22 no se muestra en el frontend. No se modifican changesets.
+El histórico suma las filas seleccionadas por año antes de calcular cuartiles y no
+convierte años ausentes en ceros. La validación desplegada y de cobertura histórica
+completa continúa pendiente; las pruebas locales no sustituyen esa evidencia.
+
 ## 2026-09-30 — contradicción de alcance de iteración 1
 
 `requisitos.md` indica que los RF incluidos en la iteración 1 son RF-01 a RF-07,
