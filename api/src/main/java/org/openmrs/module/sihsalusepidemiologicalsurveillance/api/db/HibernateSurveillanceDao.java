@@ -63,18 +63,34 @@ public class HibernateSurveillanceDao implements SurveillanceDao {
 	@SuppressWarnings("unchecked")
 	public List<PeriodCaseCount> counts(NotifiableEvent event, String period, int fromYear, int toYear) {
 		return sessionFactory.getCurrentSession().createCriteria(PeriodCaseCount.class).add(Restrictions.eq("event", event))
-		        .add(Restrictions.eq("periodType", period)).add(Restrictions.between("year", fromYear, toYear))
-		        .addOrder(Order.asc("year")).addOrder(Order.asc("periodNumber")).list();
+		        .add(Restrictions.eq("periodType", period.toUpperCase(java.util.Locale.ENGLISH)))
+		        .add(Restrictions.between("year", fromYear, toYear)).addOrder(Order.asc("year"))
+		        .addOrder(Order.asc("periodNumber")).list();
 	}
 	
 	@Override
 	public void replaceCounts(NotifiableEvent event, List<PeriodCaseCount> counts) {
-		// Serialize refreshes per event. No truncate/drop and no writes to an analytic replica.
+		// Serialize refreshes per event. Natural-key updates preserve idempotence.
 		lockEvent(event);
-		sessionFactory.getCurrentSession().createQuery("delete from PeriodCaseCount where event = :event")
-		        .setParameter("event", event).executeUpdate();
-		for (PeriodCaseCount count : counts)
-			save(count);
+		for (PeriodCaseCount count : counts) {
+			PeriodCaseCount existing = (PeriodCaseCount) sessionFactory.getCurrentSession()
+			        .createCriteria(PeriodCaseCount.class).add(Restrictions.eq("event", event))
+			        .add(Restrictions.eq("addressHierarchyEntryId", count.getAddressHierarchyEntryId()))
+			        .add(Restrictions.eq("periodType", count.getPeriodType())).add(Restrictions.eq("year", count.getYear()))
+			        .add(Restrictions.eq("periodNumber", count.getPeriodNumber()))
+			        .add(Restrictions.eq("diagnosisType", count.getDiagnosisType())).uniqueResult();
+			if (existing == null)
+				save(count);
+			else {
+				existing.setCaseCount(count.getCaseCount());
+				existing.setStartDate(count.getStartDate());
+				existing.setEndDate(count.getEndDate());
+				existing.setCalculationDate(count.getCalculationDate());
+				existing.setChangedBy(count.getCreator());
+				existing.setDateChanged(count.getCalculationDate());
+				save(existing);
+			}
+		}
 	}
 	
 	@Override
@@ -121,6 +137,21 @@ public class HibernateSurveillanceDao implements SurveillanceDao {
 		    "select e.address_hierarchy_entry_id from address_hierarchy_entry e join address_hierarchy_level l on l.address_hierarchy_level_id = e.level_id where e.uuid = :uuid and l.address_field = 'CITY_VILLAGE'")
 		        .setString("uuid", uuid).uniqueResult();
 		return value == null ? null : ((Number) value).intValue();
+	}
+	
+	@Override
+	public Integer districtIdForPopulatedCenter(Integer populatedCenterId) {
+		Object value = sessionFactory.getCurrentSession().createSQLQuery(
+		    "select p.address_hierarchy_entry_id from address_hierarchy_entry e join address_hierarchy_entry p on p.address_hierarchy_entry_id = e.parent_id join address_hierarchy_level l on l.address_hierarchy_level_id = p.level_id where e.address_hierarchy_entry_id = :id and l.address_field = 'COUNTY_DISTRICT'")
+		        .setInteger("id", populatedCenterId).uniqueResult();
+		return value == null ? null : ((Number) value).intValue();
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	public List<SurveillanceCase> surveillanceCases() {
+		return sessionFactory.getCurrentSession().createCriteria(SurveillanceCase.class)
+		        .add(Restrictions.eq("voided", false)).list();
 	}
 	
 	@Override

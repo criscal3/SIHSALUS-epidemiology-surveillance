@@ -6,6 +6,10 @@ import java.time.LocalDate;
 import java.util.*;
 
 import org.junit.Test;
+import org.openmrs.CodedOrFreeText;
+import org.openmrs.Concept;
+import org.openmrs.Diagnosis;
+import org.openmrs.User;
 import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.*;
 import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.*;
 import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.*;
@@ -90,5 +94,39 @@ public class ReportCalculatorTest {
 		    Arrays.asList(record("CONFIRMED")), Collections.<PeriodCaseCount> emptyList(), m);
 		assertFalse(report.demographics.containsKey("patient"));
 		assertFalse(report.demographics.containsKey("encounterUuid"));
+	}
+	
+	@Test
+	public void surveillanceAggregationCountsEachEligibleCaseForItsCenterAndDistrict() {
+		NotifiableEvent event = new NotifiableEvent();
+		Concept eventConcept = new Concept(1);
+		Concept diagnosisConcept = new Concept(2);
+		eventConcept.addSetMember(diagnosisConcept);
+		event.setConcept(eventConcept);
+		SurveillanceCase eligible = surveillanceCase(diagnosisConcept, "CONFIRMADO", 100);
+		SurveillanceCase discarded = surveillanceCase(diagnosisConcept, "DESCARTADO", 100);
+		Map<Integer, Integer> districts = Collections.singletonMap(100, 10);
+		
+		List<PeriodCaseCount> counts = calculator.aggregateSurveillanceCases(event, Arrays.asList(eligible, discarded),
+		    districts, m, new User(1), LocalDate.of(2026, 1, 20));
+		
+		assertEquals(10, counts.size());
+		assertTrue(counts.stream()
+		        .anyMatch(c -> c.getAddressHierarchyEntryId() == 100 && "CENTRO_POBLADO".equals(c.getZoneLevel())
+		                && "SEMANA".equals(c.getPeriodType()) && "CONFIRMADO".equals(c.getDiagnosisType())
+		                && c.getCaseCount() == 1));
+		assertTrue(counts.stream().anyMatch(c -> c.getAddressHierarchyEntryId() == 10 && "DISTRITO".equals(c.getZoneLevel())
+		        && "SEMANA".equals(c.getPeriodType()) && c.getCaseCount() == 1));
+	}
+	
+	private SurveillanceCase surveillanceCase(Concept diagnosisConcept, String type, int address) {
+		Diagnosis diagnosis = new Diagnosis();
+		diagnosis.setDiagnosis(new CodedOrFreeText(diagnosisConcept, null, null));
+		SurveillanceCase result = new SurveillanceCase();
+		result.setDiagnosis(diagnosis);
+		result.setDiagnosisType(type);
+		result.setInfectionAddress(address);
+		result.setOnsetDate(new EpidemiologicalCalendar(m).date(LocalDate.of(2026, 1, 19)));
+		return result;
 	}
 }

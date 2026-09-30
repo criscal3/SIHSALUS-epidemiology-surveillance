@@ -184,9 +184,21 @@ public class SurveillanceServiceTest {
 	@Test
 	public void refreshUsesCoverageAndReplacesAggregates() {
 		SyntheticFixture f = new SyntheticFixture();
-		f.m.surveillanceStartDate = "2026-01-01";
+		f.event.getConcept().addSetMember(f.diagnosis);
+		f.encounterDiagnosis.setDiagnosis(new CodedOrFreeText(f.diagnosis, null, null));
+		SurveillanceCase surveillanceCase = new SurveillanceCase();
+		surveillanceCase.setDiagnosis(f.encounterDiagnosis);
+		surveillanceCase.setDiagnosisType("CONFIRMADO");
+		surveillanceCase.setInfectionAddress(92);
+		surveillanceCase.setOnsetDate(new EpidemiologicalCalendar(f.m).date(java.time.LocalDate.of(2026, 1, 19)));
+		when(f.dao.surveillanceCases()).thenReturn(Collections.singletonList(surveillanceCase));
+		when(f.dao.districtIdForPopulatedCenter(92)).thenReturn(91);
 		f.service.refreshCounts();
-		verify(f.dao).replaceCounts(eq(f.event), argThat(counts -> !counts.isEmpty()));
+		f.service.refreshCounts();
+		ArgumentCaptor<List> captured = ArgumentCaptor.forClass(List.class);
+		verify(f.dao, times(2)).replaceCounts(eq(f.event), captured.capture());
+		assertEquals(captured.getAllValues().get(0).size(), captured.getAllValues().get(1).size());
+		assertFalse(captured.getAllValues().get(0).isEmpty());
 	}
 	
 	@Test

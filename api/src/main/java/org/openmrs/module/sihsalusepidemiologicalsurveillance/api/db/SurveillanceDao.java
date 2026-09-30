@@ -36,6 +36,10 @@ public interface SurveillanceDao {
 	
 	Integer populatedCenterId(String uuid);
 	
+	Integer districtIdForPopulatedCenter(Integer populatedCenterId);
+	
+	List<SurveillanceCase> surveillanceCases();
+	
 	SurveillanceCase caseByDiagnosis(org.openmrs.Diagnosis diagnosis);
 	
 	String addressUuid(Integer id);

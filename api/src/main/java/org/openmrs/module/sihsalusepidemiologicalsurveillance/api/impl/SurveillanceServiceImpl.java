@@ -527,13 +527,18 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 	
 	@Override
 	public void refreshCounts() {
-		access.require(SurveillanceConstants.MANAGE);
+		User actor = access.require(SurveillanceConstants.MANAGE);
 		ClinicalCatalog m = catalog.get();
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(m);
-		LocalDate start = LocalDate.parse(m.surveillanceStartDate), today = calendar.today();
-		List<CaseRecord> records = records(m, start, today.plusDays(1), eventConcepts());
+		List<SurveillanceCase> cases = dao.surveillanceCases();
+		Map<Integer, Integer> districts = new HashMap<Integer, Integer>();
+		for (SurveillanceCase surveillanceCase : cases)
+			if (surveillanceCase.getInfectionAddress() != null)
+				districts.put(surveillanceCase.getInfectionAddress(),
+				    dao.districtIdForPopulatedCenter(surveillanceCase.getInfectionAddress()));
 		for (NotifiableEvent event : dao.events())
-			dao.replaceCounts(event, calculator.aggregate(event, records, m, today));
+			dao.replaceCounts(event,
+			    calculator.aggregateSurveillanceCases(event, cases, districts, m, actor, calendar.today()));
 	}
 	
 	/** Called internally (within the REGISTER transaction) to refresh counts for a single event. */
