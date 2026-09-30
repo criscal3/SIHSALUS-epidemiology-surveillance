@@ -84,3 +84,9 @@ esquema vigente (el nombre viene de `concept_name` y el plazo se deriva de
 Se requiere definir el contrato administrativo para la versión nueva: si el `POST` debe
 crear cada versión y cómo se cierra una vigencia (`valid_to`). No se modificará ese
 contrato ni se reintroducirán columnas heredadas sin esa decisión.
+
+## 2026-09-30 — integración con auditoría clínica no verificable localmente
+
+La arquitectura exige reutilizar `openmrs-module-sihsalus-audit` y entregar los eventos de consulta, edición (campo, valor anterior y nuevo), exportación y reporte. Ese OMOD no está disponible en este workspace, ni se conoce todavía su identificador/versión ni su API pública. Por tanto no se puede declarar `require_module` ni afirmar que intercepte las entidades Hibernate propias de vigilancia sin inventar metadatos.
+
+Se documentó el contrato requerido en `docs/auditoria-integracion.md`. Se necesita el repositorio o una instancia de referencia con ese módulo para completar la integración; si no captura `surveillance_case`, la extensión corresponde a dicho OMOD.
