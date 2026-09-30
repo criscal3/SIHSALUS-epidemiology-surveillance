@@ -39,9 +39,34 @@ Verificación posterior: `mvn.cmd --batch-mode clean verify` terminó con
 después de cambiar la FK. Se regeneró
 `omod/target/sihsalusepidemiologicalsurveillance-1.0.0-SNAPSHOT.omod`.
 
-Este cambio no repara las tablas parcialmente creadas en la instancia afectada.
-La recuperación debe revisar esquema, datos e historial con el administrador.
-No se han borrado tablas, alterado checksums ni marcado la migración como ejecutada.
-Un changeset posterior por sí solo no evita el fallo del 14 que lo precede.
-No instalar como si fuera una recuperación automática. La validación integrada
-MariaDB/OpenMRS continúa omitida por decisión del usuario.
+## Recuperación posterior autorizada
+
+Cristian confirmó el estado parcial, las siete tablas vacías y el respaldo, y
+autorizó preparar la recuperación. Se agrega
+`13b-recover-empty-partial-surveillance-schema` **antes del 14**, sin modificar
+el changeset 13. La clase `RecoverEmptySurveillanceSchema` comprueba el historial,
+la presencia de las siete tablas, ausencia de filas y de FK externas o inesperadas
+antes del primer `DROP`. Ante una discrepancia detiene la migración.
+
+El alcance exacto es: `epidemiological_focus`, `outbreak_alert`,
+`period_case_count`, `surveillance_case`, `outbreak_alert_rule`,
+`individual_record` y `notifiable_event`, en ese orden. No elimina tablas clínicas,
+no desactiva FK, no usa CASCADE ni altera checksums. En instalación limpia no borra
+nada; si el historial registra el 14 completado tampoco elimina tablas.
+
+**Operación:** conservar el respaldo y mantener el módulo detenido, sin escritores
+concurrentes, durante la instalación del nuevo OMOD. Al iniciar, Liquibase intentará
+la recuperación y luego el 14 corregido. Si falla, detenerse y conservar el log
+completo; no borrar historial ni marcar cambios como ejecutados.
+
+La limpieza es de una sola ejecución y no ofrece rollback de las tablas eliminadas.
+El DDL de MariaDB no garantiza atomicidad: un error durante los DROP podría dejar
+una limpieza incompleta. Si el 14 vuelve a fallar después de un 13b exitoso, este
+último no se repetirá automáticamente: requiere un nuevo diagnóstico.
+
+Las pruebas locales H2 cubren las guardas y la secuencia completa de recuperación
+seguida de creación del esquema. `mvn.cmd --batch-mode clean verify` terminó con
+`BUILD SUCCESS`: 91 pruebas, cero fallos, errores u omitidas (86 API y 5 OMOD).
+No se han ejecutado acciones en el servidor.
+La validación integrada MariaDB/OpenMRS, incluida la carga de la clase de migración
+por el módulo desplegado, continúa omitida por decisión del usuario.

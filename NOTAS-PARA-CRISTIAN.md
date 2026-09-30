@@ -1,5 +1,18 @@
 # Notas para Cristian
 
+## 2026-09-30 — recuperación de tablas parciales autorizada
+
+Cristian confirmó las siete tablas vacías, el estado del historial y el respaldo,
+y autorizó preparar un changeset de limpieza. Se agrega el 13b antes del 14,
+sin modificar el 13 exitoso. Solo elimina las siete tablas del módulo tras
+comprobar que están vacías y no tienen FK externas o inesperadas; una discrepancia
+detiene la migración antes de borrar. No se ejecutó nada en el servidor.
+La instalación del nuevo OMOD intentará esta recuperación una sola vez; requiere
+ventana sin escrituras y respaldo. No hay rollback destructivo automático ni
+garantía de atomicidad DDL. Véase `docs/diagnostico-instalacion-omod.md`.
+Esta autorización sustituye el pendiente de recuperación de la nota siguiente,
+pero no certifica la integración real MariaDB/OpenMRS, aún omitida.
+
 ## 2026-09-30 — corrección del destino físico de Diagnosis
 
 Se rectifica la interpretación anterior: la clase Java `org.openmrs.Diagnosis`

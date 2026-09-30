@@ -19,6 +19,15 @@ public class LiquibaseMigrationTest {
 	
 	@Test
 	public void migrationsAreRepeatableAndEnforceForeignKeysAndUniquePeriods() throws Exception {
+		migrate(false);
+	}
+	
+	@Test
+	public void recoversEmptyPartialTablesBeforeCreatingTheCompleteSchema() throws Exception {
+		migrate(true);
+	}
+	
+	private void migrate(boolean partialSchema) throws Exception {
 		try (Connection connection = DriverManager
 		        .getConnection("jdbc:h2:mem:surveillance-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1", "sa", "")) {
 			try (Statement sql = connection.createStatement()) {
@@ -53,6 +62,14 @@ public class LiquibaseMigrationTest {
 			        .findCorrectDatabaseImplementation(new JdbcConnection(connection));
 			Liquibase liquibase = new Liquibase("liquibase.xml", new ClassLoaderResourceAccessor(), database);
 			liquibase.update(8, "");
+			if (partialSchema) {
+				try (Statement sql = connection.createStatement()) {
+					for (String table : new String[] { "notifiable_event", "outbreak_alert_rule", "outbreak_alert",
+					        "period_case_count", "epidemiological_focus", "surveillance_case", "individual_record" })
+						sql.execute("create table " + table + " (id int primary key)");
+					sql.execute("alter table surveillance_case add event_id int references notifiable_event(id)");
+				}
+			}
 			liquibase.update("");
 			liquibase.update("");
 			boolean diagnosisForeignKeyFound = false;
