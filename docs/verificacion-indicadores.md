@@ -24,6 +24,8 @@ curva diaria y canal endémico. No se ejecutaron migraciones ni escrituras remot
 | PASSED | `yarn.cmd workspace @sihsalus/esm-epidemiological-surveillance-app build` | Rspack compila; dos advertencias de tamaño (entrada principal aproximadamente 256 KiB). |
 | PASSED | `yarn.cmd prettier --check packages/apps/esm-epidemiological-surveillance-app/README.md` | Formato del README. |
 | FAILED | `yarn.cmd workspace @sihsalus/esm-epidemiological-surveillance-app lint` | Dos errores de dependencias de efectos en `infection-address-selector.component.tsx`, no modificado en esta unidad. No se han reproducido sobre `origin/main`; no se afirma que sean preexistentes en esa rama. |
+| FAILED | `yarn.cmd verify:changed --base origin/main --head HEAD` | Tras el commit frontend `297f0cc83`, detectó cambios globales de la rama respecto a `origin/main`, anunció `yarn verify` y terminó con código 1 sin resultados de esa verificación. No se atribuye éxito global al monorepo. |
+| FAILED | `git diff --check origin/main...HEAD` (frontend) | Señala una línea vacía al final de `src/constants.ts`, no modificado en esta unidad. `git diff --cached --check` del cambio de indicadores pasó antes del commit. |
 | NOT RUN | UI → OpenMRS/MariaDB desplegado | Pendiente de instancia coordinada con datos sintéticos y OMOD actualizado. Las pruebas locales no demuestran aceptación clínica. |
 
 La primera ejecución de Maven detectó dos expectativas incorrectas en pruebas nuevas:
@@ -37,3 +39,8 @@ Los años sin filas históricas no se convierten en ceros. Debe verificarse la c
 de los agregados antes de interpretar el canal. La auditoría externa, la prueba de
 migraciones sobre MariaDB y la retirada amplia del flujo heredado continúan pendientes;
 no se incluyen en esta unidad. React Form Engine sigue aplazado por decisión del usuario.
+
+Commits de implementación: backend `47b85a7`, frontend `297f0cc83`. Los archivos de
+`target/` generados por Maven y los cambios ajenos existentes en el frontend se
+conservaron sin incluirlos en los commits. El formateador Maven introduce tabulaciones
+en líneas vacías Java; `git diff --check` del backend las reportó como espacios finales.
