@@ -109,18 +109,17 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 	
 	@Override
 	public Map<String, Object> updateEvent(String uuid, Map<String, Object> body) {
-		access.require(SurveillanceConstants.MANAGE);
+		User actor = access.require(SurveillanceConstants.MANAGE);
 		NotifiableEvent event = requiredEvent(uuid);
-		if (body == null)
-			throw new SurveillanceException(422, "REQUIRED_FIELDS");
-		if (body.containsKey("uuid") && !uuid.equals(body.get("uuid")))
-			throw new SurveillanceException(409, "EVENT_UUID_MISMATCH");
-		Map<String, Object> update = new LinkedHashMap<String, Object>(body);
-		update.put("uuid", uuid);
 		dao.lockEvent(event);
-		if (event.isRetired())
-			throw new SurveillanceException(409, "EVENT_RETIRED");
-		return writeEvent(update, event);
+		Date validTo = date(string(body, "validTo"));
+		if (event.getValidFrom() == null || validTo.before(event.getValidFrom()))
+			throw new SurveillanceException(422, "INVALID_EVENT");
+		event.setValidTo(validTo);
+		event.setChangedBy(actor);
+		event.setDateChanged(new Date());
+		dao.save(event);
+		return eventJson(event);
 	}
 	
 	@Override
@@ -129,7 +128,9 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		NotifiableEvent event = requiredEvent(uuid);
 		dao.lockEvent(event);
 		if (!event.isRetired()) {
-			event.setRetired(true);
+			event.setValidTo(java.sql.Date.valueOf(java.time.LocalDate.now()));
+			event.setChangedBy(actor);
+			event.setDateChanged(new Date());
 			dao.save(event);
 		}
 	}
@@ -640,24 +641,33 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 	
 	private Map<String, Object> writeEvent(Map<String, Object> body, NotifiableEvent existing) {
 		User actor = access.require(SurveillanceConstants.MANAGE);
-		String uuid = string(body, "uuid"), name = string(body, "name"), periodicity = string(body, "periodicity");
+		String uuid = body != null && body.get("uuid") instanceof String ? string(body, "uuid")
+		        : UUID.randomUUID().toString();
+		String periodicity = string(body, "periodicity").toUpperCase(Locale.ENGLISH);
+		String referenceRegulation = string(body, "referenceRegulation");
 		Concept concept = clinical.concept(string(body, "conceptUuid"));
-		int deadline = number(body, "deadlineDays");
-		if (concept == null || concept.getRetired() || name.isEmpty() || name.length() > 255 || deadline < 0
-		        || deadline > 365 || !Arrays.asList("semanal", "inmediata", "diaria").contains(periodicity))
+		Date validFrom = date(string(body, "validFrom"));
+		Date validTo = body.get("validTo") instanceof String ? date((String) body.get("validTo")) : null;
+		if (concept == null || concept.getRetired() || referenceRegulation.isEmpty() || referenceRegulation.length() > 100
+		        || validTo != null && validTo.before(validFrom)
+		        || !Arrays.asList("SEMANAL", "INMEDIATA", "DIARIA").contains(periodicity))
 			throw new SurveillanceException(422, "INVALID_EVENT");
 		NotifiableEvent event = existing;
 		if (event == null) {
-			if (dao.eventByConcept(concept) != null)
-				throw new SurveillanceException(409, "EVENT_CONCEPT_ALREADY_EXISTS");
 			event = new NotifiableEvent();
 			event.setUuid(uuid);
-		} else if (!concept.equals(event.getConcept()))
-			throw new SurveillanceException(409, "EVENT_CONCEPT_IMMUTABLE");
+			event.setCreator(actor);
+			event.setDateCreated(new Date());
+		}
 		event.setConcept(concept);
-		event.setName(name);
 		event.setPeriodicity(periodicity);
-		event.setDeadlineDays(deadline);
+		event.setReferenceRegulation(referenceRegulation);
+		event.setValidFrom(validFrom);
+		event.setValidTo(validTo);
+		if (existing != null) {
+			event.setChangedBy(actor);
+			event.setDateChanged(new Date());
+		}
 		dao.save(event);
 		return eventJson(event);
 	}
@@ -711,7 +721,6 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 	private Map<String, Object> eventJson(NotifiableEvent event) {
 		Map<String, Object> value = new LinkedHashMap<String, Object>();
 		value.put("uuid", event.getUuid());
-		value.put("name", event.getName());
 		value.put("conceptUuid", event.getConcept().getUuid());
 		if (event.getConcept().getName() != null) {
 			value.put("conceptDisplay", event.getConcept().getName().getName());
@@ -720,7 +729,9 @@ public class SurveillanceServiceImpl extends BaseOpenmrsService implements Surve
 		}
 		value.put("periodicity", event.getPeriodicity());
 		value.put("deadlineDays", event.getDeadlineDays());
-		value.put("retired", event.isRetired());
+		value.put("referenceRegulation", event.getReferenceRegulation());
+		value.put("validFrom", event.getValidFrom() == null ? null : event.getValidFrom().toString());
+		value.put("validTo", event.getValidTo() == null ? null : event.getValidTo().toString());
 		return value;
 	}
 }

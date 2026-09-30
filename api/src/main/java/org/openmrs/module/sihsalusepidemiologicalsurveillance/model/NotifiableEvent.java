@@ -9,25 +9,11 @@ import org.openmrs.User;
 /** Persisted surveillance entity. Clinical data remains in native OpenMRS entities. */
 public class NotifiableEvent extends BaseOpenmrsObject {
 	
-	private boolean retired;
-	
-	public boolean isRetired() {
-		return retired;
-	}
-	
-	public void setRetired(boolean retired) {
-		this.retired = retired;
-	}
-	
 	private Integer id;
 	
 	private Concept concept;
 	
-	private String name;
-	
 	private String periodicity;
-	
-	private Integer deadlineDays;
 	
 	private String referenceRegulation;
 	
@@ -61,28 +47,12 @@ public class NotifiableEvent extends BaseOpenmrsObject {
 		this.concept = concept;
 	}
 	
-	public String getName() {
-		return name;
-	}
-	
-	public void setName(String name) {
-		this.name = name;
-	}
-	
 	public String getPeriodicity() {
 		return periodicity;
 	}
 	
 	public void setPeriodicity(String periodicity) {
 		this.periodicity = periodicity;
-	}
-	
-	public Integer getDeadlineDays() {
-		return deadlineDays;
-	}
-	
-	public void setDeadlineDays(Integer deadlineDays) {
-		this.deadlineDays = deadlineDays;
 	}
 	
 	public String getReferenceRegulation() {
@@ -107,6 +77,20 @@ public class NotifiableEvent extends BaseOpenmrsObject {
 	
 	public void setValidTo(Date value) {
 		validTo = value;
+	}
+	
+	public boolean isActiveOn(Date date) {
+		return validFrom != null && !validFrom.after(date) && (validTo == null || !validTo.before(date));
+	}
+	
+	/** Compatibility projection only; it is derived, never persisted. */
+	public boolean isRetired() {
+		return !isActiveOn(new Date());
+	}
+	
+	/** Notification deadline is derived from periodicity, not a database column. */
+	public Integer getDeadlineDays() {
+		return "INMEDIATA".equals(periodicity) ? 0 : "DIARIA".equals(periodicity) ? 1 : 7;
 	}
 	
 	public User getCreator() {

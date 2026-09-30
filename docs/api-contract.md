@@ -77,6 +77,14 @@ enumeraciones, fechas, residencia o centro poblado inválidos. Las respuestas 42
 
 ## Catálogos geográficos
 
+## Eventos notificables
+
+`POST /events` crea una nueva versión con `conceptUuid`, `periodicity`
+(`SEMANAL`, `INMEDIATA` o `DIARIA`), `referenceRegulation`, `validFrom` y, opcionalmente,
+`validTo`. El nombre se deriva de `concept_name` y el plazo de notificación de la
+periodicidad. `PUT /events/{uuid}/valid-to` recibe `{ "validTo": "YYYY-MM-DD" }` y
+cierra únicamente esa vigencia; no hay eliminación ni modificación de versiones previas.
+
 | Operación | Ruta | Resultado |
 |---|---|---|
 | Provincias | `GET /addresses/provinces` | entradas de Address Hierarchy |

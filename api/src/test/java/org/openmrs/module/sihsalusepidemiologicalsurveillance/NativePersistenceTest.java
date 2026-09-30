@@ -21,9 +21,9 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 	public void persistsAndReadsAnEventThroughTheRegisteredHibernateMapping() {
 		NotifiableEvent event = new NotifiableEvent();
 		event.setConcept(Context.getConceptService().getConcept(3));
-		event.setName("Synthetic surveillance");
-		event.setPeriodicity("semanal");
-		event.setDeadlineDays(7);
+		event.setPeriodicity("SEMANAL");
+		event.setReferenceRegulation("Synthetic regulation");
+		event.setValidFrom(new Date());
 		dao.save(event);
 		assertNotNull(event.getId());
 		assertEquals(event.getUuid(), dao.byUuid(NotifiableEvent.class, event.getUuid()).getUuid());
@@ -92,9 +92,9 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 			d.diagnosisConceptUuid = diagnosis.getUuid();
 		NotifiableEvent event = new NotifiableEvent();
 		event.setConcept(nativeConcept("Synthetic disease event", "N/A"));
-		event.setName("Synthetic event");
-		event.setPeriodicity("semanal");
-		event.setDeadlineDays(7);
+		event.setPeriodicity("SEMANAL");
+		event.setReferenceRegulation("Synthetic regulation");
+		event.setValidFrom(new Date());
 		dao.save(event);
 		f.disease.eventUuid = event.getUuid();
 		f.request.eventUuid = event.getUuid();

@@ -109,9 +109,9 @@ class SyntheticFixture {
 		event.setId(1);
 		event.setUuid(uuid(14));
 		event.setConcept(concept(15));
-		event.setName("Synthetic event");
-		event.setPeriodicity("semanal");
-		event.setDeadlineDays(7);
+		event.setPeriodicity("SEMANAL");
+		event.setReferenceRegulation("Synthetic regulation");
+		event.setValidFrom(new EpidemiologicalCalendar(m).date(LocalDate.of(2020, 1, 1)));
 		disease.eventUuid = event.getUuid();
 		m.diseases.add(disease);
 		add(m.statuses, "SUSPECTED", 20);

@@ -48,17 +48,10 @@ public class SurveillanceController {
 		return service().getEvent(uuid);
 	}
 	
-	@RequestMapping(value = "/events/{uuid}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/events/{uuid}/valid-to", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public Map<String, Object> updateEvent(@PathVariable("uuid") String uuid, @RequestBody Map<String, Object> body) {
 		return service().updateEvent(uuid, body);
-	}
-	
-	@RequestMapping(value = "/events/{uuid}", method = RequestMethod.DELETE)
-	@ResponseBody
-	public ResponseEntity<Void> deleteEvent(@PathVariable("uuid") String uuid) {
-		service().deleteEvent(uuid);
-		return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
 	}
 	
 	@RequestMapping(value = "/cases", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)

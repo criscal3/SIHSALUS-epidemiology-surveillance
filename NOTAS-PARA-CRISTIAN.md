@@ -71,3 +71,16 @@ autoriza descartar los datos históricos de esas seis tablas y aplicar los chang
 14 que las retiran y crean exactamente las siete tablas vigentes. El rollback de esta
 operación no puede recuperar los datos descartados; la restauración de datos corresponde
 a la copia SQL externa.
+
+## 2026-09-30 — ciclo de vida de `notifiable_event`
+
+`modelo-datos.md` exige versionar el evento ante un cambio normativo: se agrega una fila
+con un nuevo `valid_from` y no se elimina la anterior. El código heredado todavía expone
+`PUT /events/{uuid}` que modifica la misma fila y `DELETE /events/{uuid}` que usa los
+campos transitorios `retired`, `name` y `deadlineDays`; esos campos no existen en el
+esquema vigente (el nombre viene de `concept_name` y el plazo se deriva de
+`periodicity`).
+
+Se requiere definir el contrato administrativo para la versión nueva: si el `POST` debe
+crear cada versión y cómo se cierra una vigencia (`valid_to`). No se modificará ese
+contrato ni se reintroducirán columnas heredadas sin esa decisión.
