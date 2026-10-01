@@ -96,10 +96,10 @@ public class LiquibaseMigrationTest {
 					assertFalse("Historical table must be retired: " + retired,
 					    connection.getMetaData().getTables(null, null, retired, null).next());
 				}
-				ResultSet tasks = sql
-				        .executeQuery("select count(*) from scheduler_task_config where start_on_startup=false");
+				ResultSet tasks = sql.executeQuery(
+				        "select count(*) from scheduler_task_config where uuid = '1568be35-4d88-485b-9698-d6cda57f8c5e'");
 				tasks.next();
-				assertEquals(1, tasks.getInt(1));
+				assertEquals(0, tasks.getInt(1));
 				tasks.close();
 				sql.execute(
 				    "insert into notifiable_event(notifiable_event_id,uuid,concept_id,periodicity,reference_regulation,valid_from,creator,date_created) values(10,'event',1,'SEMANAL','test',CURRENT_DATE,1,CURRENT_TIMESTAMP)");
