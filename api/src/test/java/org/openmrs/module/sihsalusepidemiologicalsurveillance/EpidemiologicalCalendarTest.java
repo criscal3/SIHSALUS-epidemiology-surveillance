@@ -11,6 +11,23 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.Clinical
 public class EpidemiologicalCalendarTest {
 	
 	@Test
+	public void sqlDatesKeepTheirCalendarDayWhileInstantsUseLimaTimezone() {
+		java.util.TimeZone original = java.util.TimeZone.getDefault();
+		try {
+			for (String zone : new String[] { "UTC", "America/Lima", "Pacific/Honolulu", "Asia/Tokyo" }) {
+				java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(zone));
+				EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(new ClinicalCatalog());
+				assertEquals(LocalDate.of(2026, 9, 11), calendar.local(java.sql.Date.valueOf("2026-09-11")));
+				assertEquals(LocalDate.of(2026, 9, 10),
+				    calendar.local(java.util.Date.from(java.time.Instant.parse("2026-09-11T00:00:00Z"))));
+			}
+		}
+		finally {
+			java.util.TimeZone.setDefault(original);
+		}
+	}
+	
+	@Test
 	public void newYearUsesWeekYearNotCalendarYear() {
 		EpidemiologicalCalendar calendar = new EpidemiologicalCalendar(new ClinicalCatalog());
 		LocalDate date = LocalDate.of(2021, 1, 1);

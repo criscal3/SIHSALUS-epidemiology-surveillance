@@ -22,6 +22,9 @@ public class EpidemiologicalCalendar {
 	}
 	
 	public LocalDate local(Date date) {
+		// SQL DATE is a calendar date, not an instant at midnight in the server timezone.
+		if (date instanceof java.sql.Date)
+			return ((java.sql.Date) date).toLocalDate();
 		return Instant.ofEpochMilli(date.getTime()).atZone(zone).toLocalDate();
 	}
 	

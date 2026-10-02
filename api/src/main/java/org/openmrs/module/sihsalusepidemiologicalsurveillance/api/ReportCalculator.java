@@ -26,8 +26,8 @@ public class ReportCalculator {
 			for (String period : Arrays.asList("dia", "semana", "mes", "trimestre", "semestre")) {
 				add(values, event, surveillanceCase.getInfectionAddress(), "CENTRO_POBLADO", period, onset,
 				    surveillanceCase.getDiagnosisType(), calendar, actor, calculatedOn);
-				add(values, event, district, "DISTRITO", period, onset, surveillanceCase.getDiagnosisType(), calendar, actor,
-				    calculatedOn);
+				add(values, event, district, "DISTRITO", period, onset, surveillanceCase.getDiagnosisType(), calendar,
+				    actor, calculatedOn);
 			}
 		}
 		return new ArrayList<PeriodCaseCount>(values.values());
@@ -37,7 +37,8 @@ public class ReportCalculator {
 		if (surveillanceCase.getDiagnosis() == null || surveillanceCase.getDiagnosis().getDiagnosis() == null)
 			return false;
 		Concept diagnosis = surveillanceCase.getDiagnosis().getDiagnosis().getCoded();
-		return diagnosis != null && event.getConcept() != null && event.getConcept().getSetMembers().contains(diagnosis);
+		return diagnosis != null && event.getConcept() != null
+		        && (event.getConcept().equals(diagnosis) || event.getConcept().getSetMembers().contains(diagnosis));
 	}
 	
 	private void add(Map<String, PeriodCaseCount> values, NotifiableEvent event, Integer zone, String zoneLevel,
@@ -55,8 +56,8 @@ public class ReportCalculator {
 			count.setPeriodType(period.toUpperCase(Locale.ENGLISH));
 			count.setYear(calendar.year(onset, period));
 			count.setPeriodNumber(calendar.number(onset, period));
-			count.setStartDate(calendar.date(start));
-			count.setEndDate(calendar.date(calendar.next(start, period).minusDays(1)));
+			count.setStartDate(java.sql.Date.valueOf(start));
+			count.setEndDate(java.sql.Date.valueOf(calendar.next(start, period).minusDays(1)));
 			count.setDiagnosisType(diagnosisType);
 			count.setCaseCount(0);
 			count.setCalculationDate(calendar.date(calculatedOn));
@@ -159,8 +160,8 @@ public class ReportCalculator {
 	}
 	
 	public static String ageGroup(Integer age) {
-		return age == null ? "UNKNOWN"
-		        : age < 5 ? "0-4" : age < 12 ? "5-11" : age < 18 ? "12-17" : age < 30 ? "18-29" : age < 60 ? "30-59" : "60+";
+		return age == null ? "UNKNOWN" : age < 5 ? "0-4" : age < 12 ? "5-11" : age < 18 ? "12-17" : age < 30 ? "18-29"
+		        : age < 60 ? "30-59" : "60+";
 	}
 	
 	private void increment(SurveillanceReport r, String dimension, String key) {
@@ -194,8 +195,8 @@ public class ReportCalculator {
 			for (CaseRecord record : records)
 				if (event.getUuid().equals(record.eventUuid) && "CONFIRMED".equals(record.status) && record.onset != null
 				        && !record.onset.isBefore(start) && !record.onset.isAfter(today)) {
-					PeriodCaseCount count = buckets
-					        .get(calendar.year(record.onset, period) + ":" + calendar.number(record.onset, period));
+					PeriodCaseCount count = buckets.get(calendar.year(record.onset, period) + ":"
+					        + calendar.number(record.onset, period));
 					if (count != null)
 						count.setCaseCount(count.getCaseCount() + 1);
 				}
