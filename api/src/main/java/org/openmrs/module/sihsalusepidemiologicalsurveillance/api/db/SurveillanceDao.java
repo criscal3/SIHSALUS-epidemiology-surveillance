@@ -47,6 +47,8 @@ public interface SurveillanceDao {
 	
 	String addressUuid(Integer id);
 	
+	String addressDisplay(Integer id);
+	
 	Integer addressId(String uuid);
 	
 	Integer addressId(String uuid, String field);

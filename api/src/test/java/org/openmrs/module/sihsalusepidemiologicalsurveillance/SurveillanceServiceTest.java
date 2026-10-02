@@ -15,6 +15,34 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.*;
 public class SurveillanceServiceTest {
 	
 	@Test
+	public void draftPreservesSelectedLaboratoryObservationAndDerivedOrder() {
+		SyntheticFixture f = new SyntheticFixture();
+		Obs observation = f.lab(true);
+		f.surveillanceRequest.laboratoryObservationUuid = observation.getUuid();
+		SurveillanceCaseResponse response = f.service.createDraft(f.surveillanceRequest);
+		ArgumentCaptor<SurveillanceCase> capture = ArgumentCaptor.forClass(SurveillanceCase.class);
+		verify(f.dao).save(capture.capture());
+		assertSame(observation, capture.getValue().getLaboratoryObservation());
+		assertSame(observation.getOrder(), capture.getValue().getTestOrder());
+		assertEquals(observation.getUuid(), response.laboratoryObservationUuid);
+	}
+	
+	@Test
+	public void draftRejectsLaboratoryResultFromAnotherEncounter() {
+		SyntheticFixture f = new SyntheticFixture();
+		Obs observation = f.lab(true);
+		observation.setEncounter(new Encounter(999));
+		f.surveillanceRequest.laboratoryObservationUuid = observation.getUuid();
+		try {
+			f.service.createDraft(f.surveillanceRequest);
+			fail("Expected invalid laboratory reference");
+		}
+		catch (SurveillanceException ex) {
+			assertEquals("INVALID_LAB_RESULT", ex.getCode());
+		}
+	}
+	
+	@Test
 	public void reportReadsOnlyAggregatesWithDefaultFilters() {
 		SyntheticFixture f = new SyntheticFixture();
 		SurveillanceReport report = f.service.report(f.event.getUuid(), "2026-01-01", "2026-01-03", "SEMANA");
@@ -52,8 +80,8 @@ public class SurveillanceServiceTest {
 	@Test
 	public void reportRejectsUnsupportedGeographyAndDiscardedFilter() {
 		SyntheticFixture f = new SyntheticFixture();
-		for (String[] selection : Arrays.asList(new String[] { "PROVINCIA", "TODOS", "INVALID_ZONE_LEVEL" },
-		    new String[] { "DISTRITO", "DESCARTADO", "INVALID_DIAGNOSIS_TYPE" })) {
+		for (String[] selection : Arrays.asList(new String[] { "PROVINCIA", "TODOS", "INVALID_ZONE_LEVEL" }, new String[] {
+		        "DISTRITO", "DESCARTADO", "INVALID_DIAGNOSIS_TYPE" })) {
 			try {
 				f.service.report(f.event.getUuid(), "2026-01-01", "2026-01-03", "dia", selection[0], null, selection[1]);
 				fail();
@@ -96,6 +124,21 @@ public class SurveillanceServiceTest {
 		f.surveillanceRequest.diagnosisType = "DESCARTADO";
 		f.service.createDraft(f.surveillanceRequest);
 		verify(f.dao, never()).replaceCounts(any(NotifiableEvent.class), anyList());
+	}
+	
+	@Test
+	public void editingACaseToDiscardedRecalculatesItsPreviousContribution() {
+		SyntheticFixture f = new SyntheticFixture();
+		SurveillanceCase existing = new SurveillanceCase();
+		existing.setUuid(SyntheticFixture.uuid(99));
+		existing.setDiagnosisType("CONFIRMADO");
+		when(f.dao.byUuid(SurveillanceCase.class, existing.getUuid())).thenReturn(existing);
+		when(f.dao.caseByDiagnosis(f.encounterDiagnosis)).thenReturn(existing);
+		f.surveillanceRequest.diagnosisType = "DESCARTADO";
+		f.surveillanceRequest.deathDate = null;
+		f.service.updateDraft(existing.getUuid(), f.surveillanceRequest);
+		assertEquals("DESCARTADO", existing.getDiagnosisType());
+		verify(f.dao).replaceCounts(eq(f.event), anyList());
 	}
 	
 	@Test

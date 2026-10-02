@@ -27,6 +27,16 @@ public class SurveillanceCase extends BaseOpenmrsObject {
 	
 	private Order testOrder;
 	
+	private org.openmrs.Obs laboratoryObservation;
+	
+	public org.openmrs.Obs getLaboratoryObservation() {
+		return laboratoryObservation;
+	}
+	
+	public void setLaboratoryObservation(org.openmrs.Obs value) {
+		laboratoryObservation = value;
+	}
+	
 	private String origin;
 	
 	private Date onsetDate;

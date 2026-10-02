@@ -48,6 +48,15 @@ registra como `Obs` del encuentro mediante el formulario clínico.
 
 ### Respuesta `SurveillanceCase`
 
+La respuesta añade nombres para presentación: `encounterDisplay`, `encounterDate`,
+`providerDisplay`, `locationDisplay`, `diagnosisDisplay`, `infectionAddressDisplay`
+(provincia → distrito → centro poblado), `testOrderDisplay` y
+`laboratoryObservationDisplay`. `laboratoryObservationUuid` conserva el resultado
+seleccionado desde la migración `16-preserve-case-laboratory-observation`.
+Se comprueba su pertenencia al paciente y atención; si se envía también una orden,
+debe coincidir con `Obs.order`. Los registros históricos sin resultado persistido
+devuelven null: no se elige automáticamente una observación entre las de una orden.
+
 ```json
 {
   "uuid": "uuid",
@@ -104,10 +113,14 @@ fuera de esta iteración). Nivel, diagnóstico o dirección incompatible produce
 ## Eventos notificables
 
 `POST /events` crea una nueva versión con `conceptUuid`, `periodicity`
-(`SEMANAL`, `INMEDIATA` o `DIARIA`), `referenceRegulation`, `validFrom` y, opcionalmente,
+(`SEMANAL` o `INMEDIATA`), `referenceRegulation`, `validFrom` y, opcionalmente,
 `validTo`. El nombre se deriva de `concept_name` y el plazo de notificación de la
 periodicidad. `PUT /events/{uuid}/valid-to` recibe `{ "validTo": "YYYY-MM-DD" }` y
-cierra únicamente esa vigencia; no hay eliminación ni modificación de versiones previas.
+cierra esa vigencia por compatibilidad. `PUT /events/{uuid}` permite editar
+`conceptUuid`, `periodicity`, `referenceRegulation`, `validFrom` y `validTo`
+con el mismo privilegio de administración y las validaciones de creación.
+El formulario envía todos los atributos; `validTo: null` quita la fecha final.
+Se conserva el UUID y la auditoría de creación, y se registra quién y cuándo editó.
 
 | Operación | Ruta | Resultado |
 |---|---|---|

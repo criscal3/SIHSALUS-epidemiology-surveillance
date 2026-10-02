@@ -18,6 +18,71 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 	private SurveillanceDao dao;
 	
 	@Test
+	public void editingOneCaseReplacesOldBucketsInsteadOfAddingAnotherCase() {
+		NotifiableEvent event = new NotifiableEvent();
+		event.setConcept(Context.getConceptService().getConcept(3));
+		event.setPeriodicity("SEMANAL");
+		event.setReferenceRegulation("Synthetic edit regression");
+		event.setValidFrom(new Date());
+		dao.save(event);
+		org.openmrs.Diagnosis diagnosis = new org.openmrs.Diagnosis();
+		diagnosis.setDiagnosis(new org.openmrs.CodedOrFreeText(event.getConcept(), null, null));
+		org.openmrs.module.sihsalusepidemiologicalsurveillance.model.SurveillanceCase value = new org.openmrs.module.sihsalusepidemiologicalsurveillance.model.SurveillanceCase();
+		value.setDiagnosis(diagnosis);
+		value.setDiagnosisType("PROBABLE");
+		value.setInfectionAddress(100);
+		value.setOnsetDate(java.sql.Date.valueOf("2026-09-11"));
+		org.openmrs.module.sihsalusepidemiologicalsurveillance.api.ReportCalculator calculator = new org.openmrs.module.sihsalusepidemiologicalsurveillance.api.ReportCalculator();
+		org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.ClinicalCatalog metadata = new org.openmrs.module.sihsalusepidemiologicalsurveillance.api.model.ClinicalCatalog();
+		for (int edit = 0; edit < 5; edit++) {
+			event = dao.byUuid(NotifiableEvent.class, event.getUuid());
+			diagnosis.setDiagnosis(new org.openmrs.CodedOrFreeText(event.getConcept(), null, null));
+			if (edit == 2)
+				value.setOnsetDate(java.sql.Date.valueOf("2026-09-12"));
+			if (edit == 3)
+				value.setDiagnosisType("CONFIRMADO");
+			if (edit == 4)
+				value.setInfectionAddress(101);
+			dao.replaceCounts(event, calculator.aggregateSurveillanceCases(event, Collections.singletonList(value),
+			    Collections.singletonMap(value.getInfectionAddress(), 10), metadata, Context.getAuthenticatedUser(),
+			    java.time.LocalDate.of(2026, 9, 13)));
+			Context.flushSession();
+			Context.clearSession();
+			java.util.List<org.openmrs.module.sihsalusepidemiologicalsurveillance.model.PeriodCaseCount> daily = dao.counts(
+			    event, "dia", 2026, 2026, "CENTRO_POBLADO", null);
+			assertEquals("Only one daily bucket after edit " + edit, 1, daily.size());
+			assertEquals(Integer.valueOf(1), daily.get(0).getCaseCount());
+			assertEquals(value.getOnsetDate().toString(), daily.get(0).getStartDate().toString());
+			assertEquals(value.getDiagnosisType(), daily.get(0).getDiagnosisType());
+			assertEquals(value.getInfectionAddress(), daily.get(0).getAddressHierarchyEntryId());
+		}
+		value.setDiagnosisType("DESCARTADO");
+		dao.replaceCounts(event,
+		    calculator.aggregateSurveillanceCases(event, Collections.singletonList(value),
+		        Collections.singletonMap(101, 10), metadata, Context.getAuthenticatedUser(),
+		        java.time.LocalDate.of(2026, 9, 13)));
+		Context.flushSession();
+		Context.clearSession();
+		assertTrue(dao.counts(event, "dia", 2026, 2026).isEmpty());
+	}
+	
+	@Autowired
+	private org.openmrs.api.db.hibernate.DbSessionFactory sessionFactory;
+	
+	@Test
+	public void readsInfectionHierarchyWithDistinctSqlColumnAliases() {
+		org.openmrs.api.db.hibernate.DbSession session = sessionFactory.getCurrentSession();
+		session.createSQLQuery(
+		    "create table if not exists address_hierarchy_entry (address_hierarchy_entry_id int primary key, parent_id int, name varchar(255))")
+		        .executeUpdate();
+		session.createSQLQuery(
+		    "insert into address_hierarchy_entry (address_hierarchy_entry_id,parent_id,name) values (9001,null,'Provincia de prueba'),(9002,9001,'Distrito de prueba'),(9003,9002,'Centro de prueba')")
+		        .executeUpdate();
+		assertEquals("Provincia de prueba → Distrito de prueba → Centro de prueba", dao.addressDisplay(9003));
+		assertNull(dao.addressDisplay(9999));
+	}
+	
+	@Test
 	public void aggregateQueryFiltersPeriodYearsAndGeographyAfterReload() {
 		NotifiableEvent event = new NotifiableEvent();
 		event.setConcept(Context.getConceptService().getConcept(3));

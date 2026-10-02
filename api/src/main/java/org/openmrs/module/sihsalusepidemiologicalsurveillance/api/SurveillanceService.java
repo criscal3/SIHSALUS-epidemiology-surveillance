@@ -38,6 +38,9 @@ public interface SurveillanceService extends OpenmrsService {
 	
 	SurveillanceCaseResponse createDraft(SurveillanceCaseRequest request);
 	
+	List<SurveillanceCaseResponse> listCases(String patientUuid, String diagnosisConceptUuid, String onsetFrom,
+	        String onsetTo, String notificationFrom, String notificationTo, Boolean fatal);
+	
 	SurveillanceCaseResponse updateDraft(String uuid, SurveillanceCaseRequest request);
 	
 	SurveillanceCaseResponse getDraft(String uuid);

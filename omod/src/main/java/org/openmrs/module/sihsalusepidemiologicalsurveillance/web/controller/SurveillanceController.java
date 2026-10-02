@@ -37,8 +37,7 @@ public class SurveillanceController {
 	
 	@RequestMapping(value = "/events", method = RequestMethod.GET)
 	@ResponseBody
-	public Map<String, Object> events(
-	        @RequestParam(value = "includeRetired", defaultValue = "false") boolean includeRetired) {
+	public Map<String, Object> events(@RequestParam(value = "includeRetired", defaultValue = "false") boolean includeRetired) {
 		return Collections.<String, Object> singletonMap("results", service().getEvents(includeRetired));
 	}
 	
@@ -48,7 +47,7 @@ public class SurveillanceController {
 		return service().getEvent(uuid);
 	}
 	
-	@RequestMapping(value = "/events/{uuid}/valid-to", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = { "/events/{uuid}", "/events/{uuid}/valid-to" }, method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public Map<String, Object> updateEvent(@PathVariable("uuid") String uuid, @RequestBody Map<String, Object> body) {
 		return service().updateEvent(uuid, body);
@@ -60,10 +59,22 @@ public class SurveillanceController {
 		return new ResponseEntity<SurveillanceCaseResponse>(service().createDraft(body), HttpStatus.CREATED);
 	}
 	
+	@RequestMapping(value = "/cases", method = RequestMethod.GET)
+	@ResponseBody
+	public Map<String, Object> cases(@RequestParam(value = "patient", required = false) String patient,
+	        @RequestParam(value = "diagnosisConcept", required = false) String diagnosisConcept,
+	        @RequestParam(value = "onsetFrom", required = false) String onsetFrom,
+	        @RequestParam(value = "onsetTo", required = false) String onsetTo,
+	        @RequestParam(value = "notificationFrom", required = false) String notificationFrom,
+	        @RequestParam(value = "notificationTo", required = false) String notificationTo,
+	        @RequestParam(value = "fatal", required = false) Boolean fatal) {
+		return Collections.<String, Object> singletonMap("results",
+		    service().listCases(patient, diagnosisConcept, onsetFrom, onsetTo, notificationFrom, notificationTo, fatal));
+	}
+	
 	@RequestMapping(value = "/cases/{uuid}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public SurveillanceCaseResponse updateDraft(@PathVariable("uuid") String uuid,
-	        @RequestBody SurveillanceCaseRequest body) {
+	public SurveillanceCaseResponse updateDraft(@PathVariable("uuid") String uuid, @RequestBody SurveillanceCaseRequest body) {
 		return service().updateDraft(uuid, body);
 	}
 	
@@ -129,7 +140,7 @@ public class SurveillanceController {
 	@ExceptionHandler(Exception.class)
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> unexpected(Exception error) {
-		return new ResponseEntity<Map<String, Object>>(
-		        Collections.<String, Object> singletonMap("code", "SERVICE_UNAVAILABLE"), HttpStatus.INTERNAL_SERVER_ERROR);
+		return new ResponseEntity<Map<String, Object>>(Collections.<String, Object> singletonMap("code",
+		    "SERVICE_UNAVAILABLE"), HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 }

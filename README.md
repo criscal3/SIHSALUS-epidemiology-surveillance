@@ -16,9 +16,32 @@ Los RF-12, RF-13 y RF-22 están fuera de la iteración 1 por decisión de alcanc
 
 El contrato está congelado en [docs/api-contract.md](docs/api-contract.md). `POST /cases` y `PUT /cases/{uuid}` permiten borradores. `POST /cases/{uuid}/close` aplica las validaciones RF-07 sin añadir una columna de estado. La restricción única por diagnóstico impide dos filas para el mismo diagnóstico.
 
-El `test_order_id` puede derivarse temporalmente de una observación de laboratorio: el servidor acepta `laboratoryObservationUuid` y usa `Obs.order` cuando exista. No crea órdenes ni conceptos de laboratorio.
+El servidor conserva `laboratoryObservationUuid` en `laboratory_observation_id` y
+deriva `test_order_id` desde `Obs.order` cuando exista. Verifica que la observación
+pertenezca al paciente y atención y que la orden enviada coincida. No crea órdenes
+ni resultados. La migración aditiva `16-preserve-case-laboratory-observation` conserva
+las filas existentes: resultados históricos cuya referencia se perdió quedan vacíos,
+sin asociar resultados por suposición. Actualizar frontend y OMOD juntos.
+
+Las respuestas de casos incluyen `encounterDisplay`, `encounterDate`,
+`providerDisplay`, `locationDisplay`, `infectionAddressDisplay` (provincia → distrito
+→ centro poblado), `testOrderDisplay` y `laboratoryObservationDisplay`; los UUID
+permanecen en el contrato técnico, pero no se muestran en la pantalla.
 
 ## Eventos y conteos
+
+Al editar se recalculan los conteos incluso si el caso pasa a descartado o deja
+de tener datos suficientes para contabilizarse. El reemplazo conserva los grupos
+vigentes y elimina únicamente los acumulados derivados obsoletos del evento;
+no elimina casos. Repetir el guardado no añade otra contribución. Para reparar
+acumulados anteriores, ejecutar el recálculo manual después de actualizar el OMOD.
+
+Las columnas SQL `DATE` se interpretan como fechas de calendario sin conversión
+de zona horaria. Los instantes con hora mantienen la conversión a la zona del
+catálogo. Tras actualizar desde una versión con el desfase de fechas, ejecutar
+`POST /ws/rest/v1/sihsalusepidemiologicalsurveillance/counts/refresh` con el
+privilegio de configuración para reconstruir los acumulados existentes desde
+las fechas de inicio originales. No modifica los casos ni sus fechas.
 
 Un evento notificable es versionado: `POST /events` crea una versión con concepto, periodicidad, norma de referencia y vigencia. `PUT /events/{uuid}/valid-to` cierra solamente esa versión; no se eliminan ni modifican versiones históricas. El nombre se deriva de `concept_name` y el plazo de la periodicidad.
 

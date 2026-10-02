@@ -41,6 +41,7 @@ public class LiquibaseMigrationTest {
 				    org.openmrs.Diagnosis.class.getAnnotation(javax.persistence.Table.class).name());
 				sql.execute("create table encounter_diagnosis(diagnosis_id int primary key)");
 				sql.execute("create table orders(order_id int primary key)");
+				sql.execute("create table obs(obs_id int primary key)");
 				sql.execute("create table notification_alert(alert_id int primary key)");
 				sql.execute("create table address_hierarchy_entry(address_hierarchy_entry_id int primary key)");
 				sql.execute(
@@ -97,7 +98,7 @@ public class LiquibaseMigrationTest {
 					    connection.getMetaData().getTables(null, null, retired, null).next());
 				}
 				ResultSet tasks = sql.executeQuery(
-				        "select count(*) from scheduler_task_config where uuid = '1568be35-4d88-485b-9698-d6cda57f8c5e'");
+				    "select count(*) from scheduler_task_config where uuid = '1568be35-4d88-485b-9698-d6cda57f8c5e'");
 				tasks.next();
 				assertEquals(0, tasks.getInt(1));
 				tasks.close();
