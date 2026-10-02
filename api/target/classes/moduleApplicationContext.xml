@@ -10,6 +10,7 @@
     </bean>
     <bean id="surveillance.validator" class="org.openmrs.module.sihsalusepidemiologicalsurveillance.api.CaseValidator">
         <property name="clinical" ref="surveillance.clinical" />
+        <property name="dao" ref="surveillance.dao" />
     </bean>
     <bean id="surveillance.service" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
         <property name="transactionManager" ref="transactionManager" />
