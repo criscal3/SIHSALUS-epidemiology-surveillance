@@ -10,8 +10,6 @@ OMOD `io.github.proyecto-santaclotilde:sihsalusepidemiologicalsurveillance`, par
 - Los conteos se recalculan al registrar o actualizar casos y mediante una acción manual idempotente de configuración.
 - El componente no crea una tabla de auditoría ni se integra con NOTI-Web.
 
-Los RF-12, RF-13 y RF-22 están fuera de la iteración 1 por decisión de alcance.
-
 ## Registro de casos
 
 El contrato está congelado en [docs/api-contract.md](docs/api-contract.md). `POST /cases` y `PUT /cases/{uuid}` permiten borradores. `POST /cases/{uuid}/close` aplica las validaciones RF-07 sin añadir una columna de estado. La restricción única por diagnóstico impide dos filas para el mismo diagnóstico.
