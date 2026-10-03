@@ -20,13 +20,12 @@ public class SurveillanceControllerTest {
 		org.springframework.test.web.servlet.MockMvc mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
 		        .standaloneSetup(controller).build();
 		String route = "/rest/v1/sihsalusepidemiologicalsurveillance/reports?event=event&from=2026-01-01&to=2026-01-03";
-		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(route)).andExpect(
-		    org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(route))
+		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
 		verify(service).report("event", "2026-01-01", "2026-01-03", "semana", "CENTRO_POBLADO", null, "CONFIRMADO");
-		mvc.perform(
-		    org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(route
-		            + "&period=mes&zoneLevel=DISTRITO&address=district&diagnosisType=TODOS")).andExpect(
-		    org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+		        .get(route + "&period=mes&zoneLevel=DISTRITO&address=district&diagnosisType=TODOS"))
+		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
 		verify(service).report("event", "2026-01-01", "2026-01-03", "mes", "DISTRITO", "district", "TODOS");
 	}
 	
@@ -43,21 +42,17 @@ public class SurveillanceControllerTest {
 		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
 		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(base + "/events/event"))
 		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
-		mvc.perform(
-		    org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(base + "/events/event/valid-to")
-		            .contentType("application/json").content("{\"validTo\":\"2026-12-31\"}")).andExpect(
-		    org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(base + "/events/event/valid-to")
+		        .contentType("application/json").content("{\"validTo\":\"2026-12-31\"}"))
+		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
 		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(base + "/healthcheck"))
 		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
 		verify(service).getEvents(true);
 		verify(service).getEvent("event");
 		verify(service).updateEvent(eq("event"), anyMap());
-		mvc.perform(
-		    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-		            .put(base + "/events/event")
-		            .contentType("application/json")
-		            .content(
-		                "{\"conceptUuid\":\"concept\",\"periodicity\":\"INMEDIATA\",\"referenceRegulation\":\"NTS\",\"validFrom\":\"2026-01-01\",\"validTo\":null}"))
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
+		    base + "/events/event").contentType("application/json").content(
+		        "{\"conceptUuid\":\"concept\",\"periodicity\":\"INMEDIATA\",\"referenceRegulation\":\"NTS\",\"validFrom\":\"2026-01-01\",\"validTo\":null}"))
 		        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
 		verify(service, times(2)).updateEvent(eq("event"), anyMap());
 		verify(service).healthcheck();

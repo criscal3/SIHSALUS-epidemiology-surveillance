@@ -43,13 +43,14 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 				value.setDiagnosisType("CONFIRMADO");
 			if (edit == 4)
 				value.setInfectionAddress(101);
-			dao.replaceCounts(event, calculator.aggregateSurveillanceCases(event, Collections.singletonList(value),
-			    Collections.singletonMap(value.getInfectionAddress(), 10), metadata, Context.getAuthenticatedUser(),
-			    java.time.LocalDate.of(2026, 9, 13)));
+			dao.replaceCounts(event,
+			    calculator.aggregateSurveillanceCases(event, Collections.singletonList(value),
+			        Collections.singletonMap(value.getInfectionAddress(), 10), metadata, Context.getAuthenticatedUser(),
+			        java.time.LocalDate.of(2026, 9, 13)));
 			Context.flushSession();
 			Context.clearSession();
-			java.util.List<org.openmrs.module.sihsalusepidemiologicalsurveillance.model.PeriodCaseCount> daily = dao.counts(
-			    event, "dia", 2026, 2026, "CENTRO_POBLADO", null);
+			java.util.List<org.openmrs.module.sihsalusepidemiologicalsurveillance.model.PeriodCaseCount> daily = dao
+			        .counts(event, "dia", 2026, 2026, "CENTRO_POBLADO", null);
 			assertEquals("Only one daily bucket after edit " + edit, 1, daily.size());
 			assertEquals(Integer.valueOf(1), daily.get(0).getCaseCount());
 			assertEquals(value.getOnsetDate().toString(), daily.get(0).getStartDate().toString());
@@ -58,9 +59,8 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 		}
 		value.setDiagnosisType("DESCARTADO");
 		dao.replaceCounts(event,
-		    calculator.aggregateSurveillanceCases(event, Collections.singletonList(value),
-		        Collections.singletonMap(101, 10), metadata, Context.getAuthenticatedUser(),
-		        java.time.LocalDate.of(2026, 9, 13)));
+		    calculator.aggregateSurveillanceCases(event, Collections.singletonList(value), Collections.singletonMap(101, 10),
+		        metadata, Context.getAuthenticatedUser(), java.time.LocalDate.of(2026, 9, 13)));
 		Context.flushSession();
 		Context.clearSession();
 		assertTrue(dao.counts(event, "dia", 2026, 2026).isEmpty());
