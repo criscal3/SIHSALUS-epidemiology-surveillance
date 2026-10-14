@@ -28,6 +28,8 @@ public class SurveillanceCaseRequest {
 	
 	public String vaccinationStatus;
 	
+	public Boolean pregnant;
+
 	public String investigationDate;
 	
 	public String notificationDate;

@@ -12,6 +12,17 @@ public class SurveillanceException extends RuntimeException {
 	
 	private final List<String> fields;
 	
+	private java.util.Map<String, String> fieldErrors = Collections.emptyMap();
+
+	public SurveillanceException(int status, String code, String field, String reason) {
+		this(status, code, Collections.singletonList(field));
+		fieldErrors = Collections.singletonMap(field, reason);
+	}
+
+	public java.util.Map<String, String> getFieldErrors() {
+		return fieldErrors;
+	}
+
 	public SurveillanceException(int status, String code) {
 		this(status, code, Collections.<String> emptyList());
 	}

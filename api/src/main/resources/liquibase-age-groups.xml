@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9 http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
+ <changeSet id="surveillance-age-groups-20261009" author="sihsalus">
+  <createTable tableName="surveillance_age_group_config">
+   <column name="id" type="int" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+   <column name="uuid" type="char(38)"><constraints unique="true" nullable="false"/></column>
+   <column name="lower_bounds" type="varchar(100)"><constraints nullable="false"/></column>
+  </createTable>
+  <insert tableName="surveillance_age_group_config">
+   <column name="uuid" value="b5ee012c-6c37-4f1c-a949-61af2b607688"/>
+   <column name="lower_bounds" value="0,2,12,18,30,60"/>
+  </insert>
+ </changeSet>
+</databaseChangeLog>

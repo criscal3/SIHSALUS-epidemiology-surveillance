@@ -15,6 +15,23 @@ public interface SurveillanceService extends OpenmrsService {
 	
 	@Authorized(SurveillanceConstants.ACCESS)
 	@Transactional(readOnly = true)
+	List<AgeGroup> getAgeGroups();
+
+	@Authorized(SurveillanceConstants.MANAGE)
+	List<AgeGroup> saveAgeGroups(List<AgeGroup> groups);
+
+	@Authorized(SurveillanceConstants.REPORT)
+	@Transactional(readOnly = true)
+	DemographicReport demographics(String from, String to, String row, String column, String period, String event,
+	        String compareEvents, String diagnosisType);
+
+	@Authorized(SurveillanceConstants.REPORT)
+	@Transactional(readOnly = true)
+	DemographicReport demographics(String from, String to, String row, String column, String period, String event,
+	        String compareEvents, String diagnosisType, String zoneLevel, String address);
+
+	@Authorized(SurveillanceConstants.ACCESS)
+	@Transactional(readOnly = true)
 	Map<String, Object> getCatalog();
 	
 	@Authorized(SurveillanceConstants.ACCESS)

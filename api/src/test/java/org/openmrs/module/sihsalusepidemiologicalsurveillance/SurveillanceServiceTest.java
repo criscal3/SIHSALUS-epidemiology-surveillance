@@ -15,6 +15,30 @@ import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.*;
 public class SurveillanceServiceTest {
 	
 	@Test
+	public void invalidCaseDateIdentifiesOnlyTheFieldAndViolatedCondition() {
+		SyntheticFixture f = new SyntheticFixture();
+		f.surveillanceRequest.notificationDate = "2026-01-19";
+		try {
+			f.service.createDraft(f.surveillanceRequest);
+			fail();
+		}
+		catch (SurveillanceException ex) {
+			assertEquals(Collections.singletonMap("notificationDate", "notificationBeforeInvestigation"),
+			    ex.getFieldErrors());
+			assertEquals(Collections.singletonList("notificationDate"), ex.getFields());
+		}
+		f.surveillanceRequest.notificationDate = "2026-02-30";
+		try {
+			f.service.createDraft(f.surveillanceRequest);
+			fail();
+		}
+		catch (SurveillanceException ex) {
+			assertEquals(Collections.singletonMap("notificationDate", "dateFormat"), ex.getFieldErrors());
+		}
+		verify(f.dao, never()).save(any(SurveillanceCase.class));
+	}
+
+	@Test
 	public void draftPreservesSelectedLaboratoryObservationAndDerivedOrder() {
 		SyntheticFixture f = new SyntheticFixture();
 		Obs observation = f.lab(true);
@@ -80,8 +104,8 @@ public class SurveillanceServiceTest {
 	@Test
 	public void reportRejectsUnsupportedGeographyAndDiscardedFilter() {
 		SyntheticFixture f = new SyntheticFixture();
-		for (String[] selection : Arrays.asList(new String[] { "PROVINCIA", "TODOS", "INVALID_ZONE_LEVEL" },
-		    new String[] { "DISTRITO", "DESCARTADO", "INVALID_DIAGNOSIS_TYPE" })) {
+		for (String[] selection : Arrays.asList(new String[] { "PROVINCIA", "TODOS", "INVALID_ZONE_LEVEL" }, new String[] {
+		        "DISTRITO", "DESCARTADO", "INVALID_DIAGNOSIS_TYPE" })) {
 			try {
 				f.service.report(f.event.getUuid(), "2026-01-01", "2026-01-03", "dia", selection[0], null, selection[1]);
 				fail();

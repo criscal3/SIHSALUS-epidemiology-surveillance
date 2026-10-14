@@ -5,15 +5,101 @@ import static org.junit.Assert.*;
 import java.util.*;
 
 import org.junit.Test;
+import org.openmrs.*;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.sihsalusepidemiologicalsurveillance.api.db.SurveillanceDao;
 import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.NotifiableEvent;
+import org.openmrs.module.sihsalusepidemiologicalsurveillance.model.SurveillanceCase;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /** OpenMRS core synthetic dataset, real Spring service wiring and Hibernate queries. */
 public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 	
+	@Test
+	public void ageConfigurationSurvivesSessionReloadAndUpdate() {
+		org.openmrs.module.sihsalusepidemiologicalsurveillance.model.AgeGroupConfiguration config = new org.openmrs.module.sihsalusepidemiologicalsurveillance.model.AgeGroupConfiguration();
+		config.setUuid(org.openmrs.module.sihsalusepidemiologicalsurveillance.model.AgeGroupConfiguration.UUID);
+		config.setLowerBounds("0,2,12,18,30,60");
+		dao.save(config);
+		Context.flushSession();
+		Context.clearSession();
+		config = dao.byUuid(org.openmrs.module.sihsalusepidemiologicalsurveillance.model.AgeGroupConfiguration.class,
+		    org.openmrs.module.sihsalusepidemiologicalsurveillance.model.AgeGroupConfiguration.UUID);
+		assertEquals("0,2,12,18,30,60", config.getLowerBounds());
+		config.setLowerBounds("0,3,12,18,30,60");
+		dao.save(config);
+		Context.flushSession();
+		Context.clearSession();
+		assertEquals(
+		    "0,3,12,18,30,60",
+		    dao.byUuid(org.openmrs.module.sihsalusepidemiologicalsurveillance.model.AgeGroupConfiguration.class,
+		        org.openmrs.module.sihsalusepidemiologicalsurveillance.model.AgeGroupConfiguration.UUID).getLowerBounds());
+	}
+
+	@Test
+	public void hibernatePersistsSnapshotButNeverUpdatesItsColumns() {
+		Patient patient = Context.getPatientService().getPatient(2);
+		Encounter encounter = new Encounter();
+		encounter.setPatient(patient);
+		encounter.setEncounterDatetime(new Date());
+		encounter.setLocation(Context.getLocationService().getLocation(1));
+		encounter.setEncounterType(Context.getEncounterService().getAllEncounterTypes(false).get(0));
+		Context.getEncounterService().saveEncounter(encounter);
+		Diagnosis diagnosis = new Diagnosis();
+		diagnosis.setPatient(patient);
+		diagnosis.setEncounter(encounter);
+		diagnosis.setDiagnosis(new CodedOrFreeText(Context.getConceptService().getConcept(3), null, null));
+		diagnosis.setCertainty(ConditionVerificationStatus.CONFIRMED);
+		diagnosis.setRank(1);
+		Context.getDiagnosisService().save(diagnosis);
+		Provider provider = new Provider();
+		provider.setPerson(Context.getAuthenticatedUser().getPerson());
+		provider.setIdentifier("snapshot-synthetic");
+		Context.getProviderService().saveProvider(provider);
+		SurveillanceCase value = new SurveillanceCase();
+		value.setPatient(patient);
+		value.setEncounter(encounter);
+		value.setDiagnosis(diagnosis);
+		value.setProvider(provider);
+		value.setLocation(encounter.getLocation());
+		value.setDiagnosisType("PROBABLE");
+		value.setCreator(Context.getAuthenticatedUser());
+		value.setDateCreated(new Date());
+		value.setPatientGivenNames("Synthetic Given");
+		value.setPatientPaternalSurname("Paternal");
+		value.setPatientMaternalSurname("Maternal");
+		value.setPatientSex("F");
+		value.setPatientAge(35);
+		value.setPatientResidence("Synthetic residence");
+		value.setPregnant(true);
+		dao.save(value);
+		String uuid = value.getUuid();
+		Context.flushSession();
+		Context.clearSession();
+		value = dao.byUuid(SurveillanceCase.class, uuid);
+		assertEquals("Synthetic Given", value.getPatientGivenNames());
+		assertTrue(value.getPregnant());
+		value.setPatientGivenNames("Changed");
+		value.setPatientPaternalSurname("Changed");
+		value.setPatientMaternalSurname("Changed");
+		value.setPatientSex("M");
+		value.setPatientAge(99);
+		value.setPatientResidence("Changed");
+		value.setPregnant(false);
+		dao.save(value);
+		Context.flushSession();
+		Context.clearSession();
+		value = dao.byUuid(SurveillanceCase.class, uuid);
+		assertEquals("Synthetic Given", value.getPatientGivenNames());
+		assertEquals("Paternal", value.getPatientPaternalSurname());
+		assertEquals("Maternal", value.getPatientMaternalSurname());
+		assertEquals("F", value.getPatientSex());
+		assertEquals(Integer.valueOf(35), value.getPatientAge());
+		assertEquals("Synthetic residence", value.getPatientResidence());
+		assertFalse(value.getPregnant());
+	}
+
 	@Autowired
 	private SurveillanceDao dao;
 	
@@ -43,14 +129,13 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 				value.setDiagnosisType("CONFIRMADO");
 			if (edit == 4)
 				value.setInfectionAddress(101);
-			dao.replaceCounts(event,
-			    calculator.aggregateSurveillanceCases(event, Collections.singletonList(value),
-			        Collections.singletonMap(value.getInfectionAddress(), 10), metadata, Context.getAuthenticatedUser(),
-			        java.time.LocalDate.of(2026, 9, 13)));
+			dao.replaceCounts(event, calculator.aggregateSurveillanceCases(event, Collections.singletonList(value),
+			    Collections.singletonMap(value.getInfectionAddress(), 10), metadata, Context.getAuthenticatedUser(),
+			    java.time.LocalDate.of(2026, 9, 13)));
 			Context.flushSession();
 			Context.clearSession();
-			java.util.List<org.openmrs.module.sihsalusepidemiologicalsurveillance.model.PeriodCaseCount> daily = dao
-			        .counts(event, "dia", 2026, 2026, "CENTRO_POBLADO", null);
+			java.util.List<org.openmrs.module.sihsalusepidemiologicalsurveillance.model.PeriodCaseCount> daily = dao.counts(
+			    event, "dia", 2026, 2026, "CENTRO_POBLADO", null);
 			assertEquals("Only one daily bucket after edit " + edit, 1, daily.size());
 			assertEquals(Integer.valueOf(1), daily.get(0).getCaseCount());
 			assertEquals(value.getOnsetDate().toString(), daily.get(0).getStartDate().toString());
@@ -59,8 +144,9 @@ public class NativePersistenceTest extends BaseModuleContextSensitiveTest {
 		}
 		value.setDiagnosisType("DESCARTADO");
 		dao.replaceCounts(event,
-		    calculator.aggregateSurveillanceCases(event, Collections.singletonList(value), Collections.singletonMap(101, 10),
-		        metadata, Context.getAuthenticatedUser(), java.time.LocalDate.of(2026, 9, 13)));
+		    calculator.aggregateSurveillanceCases(event, Collections.singletonList(value),
+		        Collections.singletonMap(101, 10), metadata, Context.getAuthenticatedUser(),
+		        java.time.LocalDate.of(2026, 9, 13)));
 		Context.flushSession();
 		Context.clearSession();
 		assertTrue(dao.counts(event, "dia", 2026, 2026).isEmpty());

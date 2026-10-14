@@ -13,6 +13,32 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/rest/v1/sihsalusepidemiologicalsurveillance")
 public class SurveillanceController {
 	
+	@RequestMapping(value = "/configuration/age-groups", method = RequestMethod.GET)
+	@ResponseBody
+	public List<AgeGroup> ageGroups() {
+		return service().getAgeGroups();
+	}
+
+	@RequestMapping(value = "/configuration/age-groups", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public List<AgeGroup> saveAgeGroups(@RequestBody List<AgeGroup> groups) {
+		return service().saveAgeGroups(groups);
+	}
+
+	@RequestMapping(value = "/reports/demographics", method = RequestMethod.GET)
+	@ResponseBody
+	public DemographicReport demographics(@RequestParam("from") String from, @RequestParam("to") String to,
+	        @RequestParam("row") String row, @RequestParam("column") String column,
+	        @RequestParam(value = "period", defaultValue = "mes") String period,
+	        @RequestParam(value = "event", required = false) String event,
+	        @RequestParam(value = "compareEvents", required = false) String compareEvents,
+	        @RequestParam(value = "diagnosisType", defaultValue = "CONFIRMADO") String diagnosisType,
+	        @RequestParam(value = "zoneLevel", defaultValue = "CENTRO_POBLADO") String zoneLevel,
+	        @RequestParam(value = "address", required = false) String address) {
+		return service()
+		        .demographics(from, to, row, column, period, event, compareEvents, diagnosisType, zoneLevel, address);
+	}
+
 	private SurveillanceService service;
 	
 	public void setService(SurveillanceService value) {
@@ -37,8 +63,7 @@ public class SurveillanceController {
 	
 	@RequestMapping(value = "/events", method = RequestMethod.GET)
 	@ResponseBody
-	public Map<String, Object> events(
-	        @RequestParam(value = "includeRetired", defaultValue = "false") boolean includeRetired) {
+	public Map<String, Object> events(@RequestParam(value = "includeRetired", defaultValue = "false") boolean includeRetired) {
 		return Collections.<String, Object> singletonMap("results", service().getEvents(includeRetired));
 	}
 	
@@ -48,8 +73,7 @@ public class SurveillanceController {
 		return service().getEvent(uuid);
 	}
 	
-	@RequestMapping(value = { "/events/{uuid}",
-	        "/events/{uuid}/valid-to" }, method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = { "/events/{uuid}", "/events/{uuid}/valid-to" }, method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public Map<String, Object> updateEvent(@PathVariable("uuid") String uuid, @RequestBody Map<String, Object> body) {
 		return service().updateEvent(uuid, body);
@@ -76,8 +100,7 @@ public class SurveillanceController {
 	
 	@RequestMapping(value = "/cases/{uuid}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public SurveillanceCaseResponse updateDraft(@PathVariable("uuid") String uuid,
-	        @RequestBody SurveillanceCaseRequest body) {
+	public SurveillanceCaseResponse updateDraft(@PathVariable("uuid") String uuid, @RequestBody SurveillanceCaseRequest body) {
 		return service().updateDraft(uuid, body);
 	}
 	
@@ -129,6 +152,7 @@ public class SurveillanceController {
 		Map<String, Object> body = new LinkedHashMap<String, Object>();
 		body.put("code", error.getCode());
 		body.put("fields", error.getFields());
+		body.put("fieldErrors", error.getFieldErrors());
 		return new ResponseEntity<Map<String, Object>>(body, HttpStatus.valueOf(error.getStatus()));
 	}
 	
@@ -143,7 +167,7 @@ public class SurveillanceController {
 	@ExceptionHandler(Exception.class)
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> unexpected(Exception error) {
-		return new ResponseEntity<Map<String, Object>>(
-		        Collections.<String, Object> singletonMap("code", "SERVICE_UNAVAILABLE"), HttpStatus.INTERNAL_SERVER_ERROR);
+		return new ResponseEntity<Map<String, Object>>(Collections.<String, Object> singletonMap("code",
+		    "SERVICE_UNAVAILABLE"), HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 }

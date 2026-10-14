@@ -12,6 +12,16 @@ public class SurveillanceCaseResponse extends SurveillanceCaseRequest {
 	
 	public String patientSex;
 	
+	public String patientGivenNames;
+
+	public String patientPaternalSurname;
+
+	public String patientMaternalSurname;
+
+	public Integer patientAge;
+
+	public String patientResidence;
+
 	public String patientBirthDate;
 	
 	public String diagnosisDisplay;

@@ -73,6 +73,12 @@ public class LiquibaseMigrationTest {
 			}
 			liquibase.update("");
 			liquibase.update("");
+			try (Statement sql = connection.createStatement();
+			        ResultSet config = sql.executeQuery("select lower_bounds from surveillance_age_group_config")) {
+				assertTrue(config.next());
+				assertEquals("0,2,12,18,30,60", config.getString(1));
+				assertFalse(config.next());
+			}
 			boolean diagnosisForeignKeyFound = false;
 			try (ResultSet keys = connection.getMetaData().getImportedKeys(null, null, "SURVEILLANCE_CASE")) {
 				while (keys.next()) {
