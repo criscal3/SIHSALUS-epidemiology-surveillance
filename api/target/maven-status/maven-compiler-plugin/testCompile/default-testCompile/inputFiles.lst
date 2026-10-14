@@ -1,6 +1,9 @@
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\AggregateReportCalculatorTest.java
+C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\CaseSnapshotTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\CaseValidatorTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\ClinicalCatalogServiceTest.java
+C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\DemographicCalculatorTest.java
+C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\DemographicServiceTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\EndemicChannelTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\EpidemiologicalCalendarTest.java
 C:\Users\smith\Documents\TESIS\Codigo\epidemiologysurveillance\api\src\test\java\org\openmrs\module\sihsalusepidemiologicalsurveillance\LiquibaseMigrationTest.java
